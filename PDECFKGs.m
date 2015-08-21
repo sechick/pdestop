@@ -23,13 +23,13 @@ evivec = max(wvec,0);   % unless otherwise specified, best you
 if s0 <= 0
     warning('s0 should be strictly greater than 0');
 else
-    NUMSVECDEFAULT = 100;
+    NUMCHECKS = 10000; % FIX: Can probabably find a way to speed this check, but this is reasonable proxy for the moment.
     if nargin < 3 % if svec is not passed, then implement a 'default' set of values for it
         % try to find KG* type 'best' lookahead value in (w,s) scale when
         % w0=0 and s=s0
-        dwtest = min(1,s0)^2/2/10;
-        dstest = dwtest^2*2/3;
-        svec = s0 - dstest*(1:NUMSVECDEFAULT)/10;
+%        dwtest = min(1,s0)^2/4/12;
+%        dstest = dwtest^2*2/3;
+        svec = s0*(1:NUMCHECKS)/(NUMCHECKS);
     end
     svec2 = svec(svec>0 & svec < s0);       % pull out the values of svec in open interval (0, s0)
     for i=1:length(svec2)

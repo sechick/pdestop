@@ -18,23 +18,25 @@ function [ evivec ] = PDECGKGs( wvec, s0, svec )
 
 % At worst case, assume that one can stop immediately and get the best of 0
 % and the value of wvec. This is the usual terminal reward for stopping.
-evivec = max(wvec,0);   % unless otherwise specified, best you
+
+evivec = max(wvec,0);   % lower bound on best you can do is to stop immediately
 
 % do some error checking
 if s0 <= 0
     warning('s0 should be strictly greater than 0');
 else
-    NUMSVECDEFAULT = 40;
+    NUMCHECKS = 10000; % FIX: Can probabably find a way to speed this check, but this is reasonable proxy for the moment.
     if nargin < 3 % if svec is not passed, then implement a 'default' set of values for it
         % try to find KG* type 'best' lookahead value in (w,s) scale when
         % w0=0 and s=s0
-        dwtest = min(1,s0)^2/2/5;
-        dstest = dwtest^2*2/3;
-        svec = s0 - dstest*(1:NUMSVECDEFAULT)/10;
+        svec = s0*(1:NUMCHECKS)/(NUMCHECKS);
     end
     svec2 = svec(svec>0 & svec < s0);       % pull out the values of svec in open interval (0, s0)
-    for i=1:length(svec2)
-        evitmp = exp(1/s0 - 1/svec2(i)) * wvec;
+    sincrem = s0-svec2;             % time elapse from scur to valid values in svec
+    dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment
+    for i=1:length(svec2)           % check the lookaheads over that interval
+        erew = (max(0,wvec+dincrem(i)) + max(0,wvec) + max(0,wvec+dincrem(i)))/3; % reward making decision in a bit of time
+        evitmp = exp(1/s0 - 1/svec2(i)) * erew;
         evivec = max(evivec,evitmp);
     end
 end

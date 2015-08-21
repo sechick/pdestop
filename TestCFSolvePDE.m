@@ -15,12 +15,12 @@ discrate = 0.0002;% zero discount rate per sample for C&F paper (use >0 for C&G 
 discrate = 0.00;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
 if discrate == 0
     c=1;         % cost per single sample in (y,t) space
-    t0=0.1;%0.25; %.25
-    tEND=20000;%20000; %5000
+    t0=0.25;%0.25; %.25
+    tEND=30000;%20000; %5000
 else
     c=0;
     t0=0.5;%0.25; %.25
-    tEND=25000;20000; %5000
+    tEND=30000; %25000;20000; %5000
 end
 m=0;         % value of retirement option in (y,t) space
 mu0=0;
@@ -110,9 +110,9 @@ PDEparam.finiteT = false; % false or negative for infinite horizon problem, or a
 %   c) Some parameters which guide the computation of the solution and
 %   diagnostics during the computation.
 if PDEscale.discrate > 0    % precision factor can be smaller for discounted rewards, as larger dw can be used
-    PDEparam.precfactor = 8.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
+    PDEparam.precfactor = 10.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
 else
-    PDEparam.precfactor = 16.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
+    PDEparam.precfactor = 30.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
 end
 PDEparam.DoPlot = true;       % true to turn on diagnostic plots
 
@@ -128,11 +128,14 @@ toc
 flo = 1;
 fhi = MAXFiles;
 [rval, cfSoln] = PDESolnLoad(BaseNameFile,flo,fhi);
-
+if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    UtilPlotDiagnostics(cfSoln,'Figure\');
+end
 
 APrioriRegret=(sigma/sqrt(t0)) * PsiNorm( abs(mu0-m) / (sigma/sqrt(t0)))
 tmppp=PDEGetVals(cfSoln,(mu0-m)*beta,1/(t0*gamma))/beta
 APrioriRegret-tmppp
+
 
 % try to check smoothness of value function in these files from one 'block'
 % to the next, as a sanity check for numerical stability and the impact of

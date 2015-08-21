@@ -96,13 +96,14 @@ else
             fileindx=ijk*ones(size(Data(ijk).svec));
             startedloading=true;
         end
+        
     end
     Computed.accumsvec = accumsvec;
     Computed.fileindx = fileindx;       % index into which file structure contains the rigth element...
 %    Computed.accumwvec = accumwvec;
     Computed.slower = min(accumsvec);
     Computed.supper = max(accumsvec);
-    Computed.accumuppper = accumupper;
+    Computed.accumupper = accumupper;
     Computed.accumlower = accumlower;
     PDESolnStructure.Computed = Computed;
 

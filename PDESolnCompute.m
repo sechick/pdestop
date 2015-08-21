@@ -46,6 +46,15 @@ function [rval, numfiles] = PDESolnCompute(fName, PDEscalein, PDEparam)
 % standardize the scaling again
 PDEscale = PDEScaleStandardize(PDEscalein);
 
+figdir = 'Figure\';
+figsave = true;
+
+% create the directory for the figures if it does not exist already and the figures are
+% to be saved
+if ~isdir(figdir) & figsave
+    mkdir(figdir);
+end
+
 % copy some parameter values to local
 %alpha = PDEscale.alpha;
 beta = PDEscale.beta;
@@ -118,14 +127,14 @@ else
     dw = approxmeth(1);
 end
 ds = dw^2 * 2 / 3;          % in trinomial tree, equal probs of going up, straight or down implies this equation to get correct variance of reverse time brownian motion
-SAVEEVERY=160;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
-NUMSAVESPERITER=100;  % number of times we save the PDE values, for storage in matrix and files?
+SAVEEVERY=250;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
+NUMSAVESPERITER=140;  % number of times we save the PDE values, for storage in matrix and files?
 Numds=SAVEEVERY*NUMSAVESPERITER;   % number of time steps per grid, % 8000 or 16000 for example, 
 FRACTOKEEP = 0.9; % use this to remember the state at some earlier time: 0.9 or 085 should get of ripples in many cases, make sure it is smaller than
 if (FRACTOKEEP > (1-2/SAVEEVERY)) | (FRACTOKEEP < 0.5)
     warning('keep FRACTOKEEP between 0.5 and 1 - 2/SAVEEVERY, please insure SAVEEVERY big enough');
 end
-myeps = min(1,beta)*min(10^-12, ds/1000);    % a small value, for use in checking if things are close to 0 or not
+myeps = 10^-10; %min(1,beta)*min(10^-12, ds/1000);    % a small value, for use in checking if things are close to 0 or not
 
 if PDEparam.DoPlot
     s0
@@ -133,7 +142,7 @@ if PDEparam.DoPlot
 end
 
 
-%%%%%%%%%%%% START CLIPPING INTO MATLAB ALL OF THIS, CHUNK BY CHUNK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CHUNK1: Set up the Grid
 
 % now figure out what is the right number of dw values which are needed
@@ -142,19 +151,22 @@ end
 % approximations...
 THRESHSCALE = 100;          % set to be a bit bigger than the threshold value for 's' in the scaled approx for optimal boundary
 numchunks = 1 + ceil( log2( 1.1*(min(THRESHSCALE,s0)-sinit)/(Numds*ds) ) ); % guess as to how many iterations are needed to generate all the files
-spowvec = 4.^(0:(numchunks-1)); % compute some vectors to say roughly how many times the initial 'ds' are the s-scale steps in the i=1,...,numchunks iterations
-wpowvec = 2.^(0:(numchunks-1)); % compute some vectors to say roughly how many times the initial 'dw' are the w-scale steps in the i=1,...,numchunks iterations
-smaxvec = sinit+Numds*ds*cumsum(spowvec); % find the 
+spowvec = [0 4.^(0:(numchunks-1))]; % compute some vectors to say roughly how many times the initial 'ds' are the s-scale steps in the i=1,...,numchunks iterations
+wpowvec = [1 2.^(0:(numchunks-1))]; % compute some vectors to say roughly how many times the initial 'dw' are the w-scale steps in the i=1,...,numchunks iterations
+smaxvec = sinit+Numds*ds*cumsum(spowvec); 
+% Right now we are only checking for figure fitting within boundary. Maybe
+% we should also be checking for number of grid points within boundary at
+% each value of the boundary... might need to shrink dw again...
 if isa(approxmeth, 'function_handle')
     wmaxvec=approxmeth(smaxvec,PDEscale,PDEparam);      % approximate the maximum value of w for which the grid must account
     dwvec = dw*wpowvec;
     %dsvec = ds*spowvec;
-    ceilfactor=2.0;
-    if isDisc   % get an approximation for the range of the upper and lower boundaries
-        lowceilfactor = 2.0*ceilfactor;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
+    ceilfactor=1.2; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
+    if isDisc   
+        ceilfactor = 6.0;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
     end
     ratiovec = wmaxvec ./ dwvec;    % figure roughly how many dw from 0 to upper boundary...
-    bigw = ceil(max(ceilfactor*ratiovec)); % hit that figure with a multiplier in order to make sure there is a margin of error, especially below boundary
+    bigw = ceil(ceilfactor*max(ratiovec)); % hit that figure with a multiplier in order to make sure there is a margin of error, especially below boundary
 else  % if we don't have a function to compute, approximately, the upper stopping boundary, then take it from user specified input
     bigw = max(2*PDEparam.precfactor,ceil(approxmeth(2)));
 end
@@ -163,6 +175,13 @@ end
 % how big it is.
 wvec = dw*(-bigw:bigw);
 [wvsize] = length(wvec);
+
+hifrac = 0; lowfrac = 1; % These will be used in diagnostics to see if ceilfactor is set up well or not.
+% if there is no lower boundary, then it is fine if lowfrac is 1 at the end
+% of a run. however, when discount rate is 0, then hifrac and lowfrac
+% should both end up near .5 to .9. if they are a lot smaller than that at
+% the end of a run, then ceilfactor can be made smaller for the case of no
+% discounting - this will help the code run faster.
 
 % Set up the initial conditions for the recursions
 scur = sinit
@@ -189,7 +208,11 @@ EPCSCin = 0*Cinitvec; % a priori, assume 0 more samples in expectation at termin
 % constraints. 
 % For the CF code, the derivations should make this so it only needs to
 % loop the minimum number of times.
-middlecin1 = Cin(bigw-3:bigw+3)-Cinitvec(bigw-3:bigw+3)
+if PDEparam.DoPlot
+    scur
+    dw
+    middlecin1 = Cinitvec((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))
+end
 minindx=1; counter = 1;
 while minindx==1
     % do the iteration
@@ -213,8 +236,10 @@ while minindx==1
     stopped = ( abs(Cout - Cinitvec) < myeps ); % check if we have stopped or not.
     [~, minindx] = min(stopped);             % get index to first grid point above lower stopping boundary
     [~, maxindx] = min(flipdim(stopped,2));  % get index to first grid point below upper stopping boundary
-    maxindx = wvsize + 1 - maxindx;
-    if (counter < SAVEEVERY) & (~PDEparam.finiteT)  % force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the initializaiton of the terminal condition
+    maxindx = wvsize + 1 - maxindx; %(scur < sEND - 2*ds)   % fix the value of minindx
+    hifrac = max(hifrac,maxindx/length(stopped)); % compute some diagnostic stats for how much of the grid is being used by the contin set.
+    lowfrac = min(lowfrac,minindx/length(stopped));
+    if (~PDEparam.finiteT) & ((counter < SAVEEVERY) | 0) % unless it is for finite horizon, force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the  initializaiton of the terminal condition
 %    if (counter < 20*PDEparam.precfactor)  % force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the initializaiton of the terminal condition
         minindx = 1;
     end
@@ -227,7 +252,7 @@ if PDEparam.DoPlot
 %    numinitchecks = (scur - sinit)/ds
 %    scurminindxmaxindx = [scur minindx maxindx]
 %    middlecin = Cin(minindx-3:maxindx+3)-Cinitvec(minindx-3:maxindx+3)
-    middlecin = Cin(maxindx-3-PDEparam.precfactor:maxindx+3)-Cinitvec(maxindx-3-PDEparam.precfactor:maxindx+3)
+    middlecin = Cin((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))-Cinitvec((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))
 end
 
 % CHUNK3: Now that we have a point (w=0,s) that is in the continuation set, the
@@ -246,7 +271,7 @@ downvec=zeros(size(svec));
 
 % CHUNK4: do the iteration for the value function, only saving the data structure
 % every so often, to reduce data storage requirements.
-ijk=0;
+ijk=0;   % index to keep track of the number of blocks (one per rescaling of dw and ds) used in the computations
 while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest value of s0 that is needed is covered.
     ijk=ijk+1;          % counter for iterations
     firsts(ijk) = scur+ds;     % remember smallest value of s for which this block computes statistics
@@ -273,6 +298,8 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         [~, minindx] = min(stopped);             % get index to first grid point above lower stopping boundary
         [~, maxindx] = min(flipdim(stopped,2));  % get index to first grid point below upper stopping boundary
         maxindx = wvsize + 1 - maxindx;         %    [scur minindx maxindx];
+        hifrac = max(hifrac,maxindx/length(stopped)); % compute some diagnostic stats for how much of the grid is being used by the contin set.
+        lowfrac = min(lowfrac,minindx/length(stopped));
 
         % FIX: update expected number of samples til stopping time: to be
         % debugged
@@ -320,88 +347,15 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     
     % save results to file
     mymat = strcat(fName,int2str(ijk),'.mat');
-% save(mymat,'svec','wvec','Vwsmatrix','Bwsmatrix','ENwsmatrix','EPCSwsmatrix','upvec','up1','downvec','down1');
 % should be able to reconstruct Vwsmatrix from Bwsmatrix and PDEscale, PDEparam.
-    save(mymat,'Bwsmatrix','ENwsmatrix','EPCSwsmatrix','svec','wvec','upvec','downvec');
+    save(mymat,'Bwsmatrix','ENwsmatrix','EPCSwsmatrix','svec','wvec','upvec','downvec','up1','down1');
 
     % if diagnostic plots are desired, plot them
     if PDEparam.DoPlot
-        figdir = 'Figure\';
-        if ~isdir(figdir) 
-            mkdir(figdir);
-        end
-        
-        myfontsize=16;
-        mysmallfontsize=14;
-        points = 144*3; %spacing between labels on contours - made so that only one label appears per line
-
-        ijk
-        maxup1upwbiaswvec = [max(up1) max(upvec) max(wvec)]
-        % First, plot a contour plot of the benefit (above 0) of continuing, plus a
-        % boundary of the upper and lower continuation set
-        figure(20+ijk)
-        hold off
-        [C, h]=contour(svec,wvec,Bwsmatrix); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
-        hold on
-        plot(svec,upvec,'--',svec,downvec,'--');set(gca,'FontSize',mysmallfontsize);
-        if ijk>1
-            plot([ lasts(ijk-1) lasts(ijk-1) ] ,[min(wvec) max(wvec)],'-.r');
-        end
-        plot([ firsts(ijk) firsts(ijk) ] ,[min(wvec) max(wvec)],'-.g');
-        plot([ lasthelds(ijk) lasthelds(ijk) ] ,[min(wvec) max(wvec)],'-.k');
-        tmp=axis;tmp(4)=max(10*dw,1.2*max(max(up1),max(upvec)));tmp(3)=1.2*min(min(down1),min(downvec));axis(tmp);
-        xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
-        title('Stdized E[value of continuing over stopping | (w_s, s)]','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat(figdir,fName,'FigContWS',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
-
-        figure(60+ijk)
-        hold off
-        [C, h]=contour(1/gamma./svec,wvec/beta,Bwsmatrix/beta); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
-        hold on
-        plot(1/gamma./svec,upvec/beta,'--',1/gamma./svec,downvec/beta,'--');set(gca,'FontSize',mysmallfontsize);
-        tmp=axis;tmp(4)=1.2*max(max(10*dw,max(up1))/beta,max(upvec)/beta);tmp(3)=1.2*min(min(down1),min(downvec))/beta;axis(tmp);
-        xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
-        title('E[value of continuing over stopping | (y_t/n_t, n_t)]','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat(figdir,fName,'FigContYT',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
-
-        figure(100+ijk)
-        hold off
-        plot(svec,up1,'-.',svec,upvec,'--');set(gca,'FontSize',mysmallfontsize);
-        hold on
-        if isa(approxmeth, 'function_handle')
-            theoryvec=approxmeth(svec,PDEscale,PDEparam);   
-            plot(svec,theoryvec,'-');
-            legend('not adjusted','bias adjusted','theory bound');
-        else
-            legend('not adjusted','bias adjusted');
-        end
-        plot(svec,down1,'-.',svec,downvec,'--');set(gca,'FontSize',mysmallfontsize);
-        tmp=axis;tmp(4)=1.2*max(max(10*dw,max(up1)),max(upvec));tmp(3)=1.2*min(min(down1),min(downvec));axis(tmp);
-        xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
-        title('Stopping boundaries in (w_s,s) scale','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat(figdir,fName,'FigContCPbias',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
-
-        %        figure(140+ijk)
-        figure(140)
-        hold off
-        plot(svec,-downvec,'-.',svec,upvec,'--');set(gca,'FontSize',mysmallfontsize);
-        hold on
-        if isa(approxmeth, 'function_handle')
-            theoryvec=approxmeth(svec,PDEscale,PDEparam);   
-            plot(svec,theoryvec,'-');
-            legend('- downvec','upvec','theory bound');
-        else
-            legend('- downvec','upvec');
-        end
-        tmp=axis;tmp(4)=1.2*max(max(10*dw,max(-downvec)),max(upvec));tmp(3)=0;axis(tmp);
-        xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
-        title('Compare upper bound with -lower bound, (w_s, s) coord','FontSize',myfontsize,'FontName','Times')
-        %        mytitle = strcat(figdir,fName,'FigDiffUpDownWS',int2str(ijk),'.eps');
-        %        print('-deps',mytitle);	
-
+        dw
+        ds
+        hifrac
+        lowfrac
         %        figure(180+ijk)
         figure(180)
         hold off
@@ -409,47 +363,25 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         hold on; 
         plot(downvec(ind),0,'x',upvec(ind),0,'x');set(gca,'FontSize',mysmallfontsize);
         % tmp=axis;tmp(4)=1.2*max(max(10*dw,max(up1))/beta,max(upvec)/beta);tmp(3)=0;axis(tmp);
+        tmp=axis;tmp(1)=(min(down1)-dw);tmp(2)=(max(up1)+dw);tmp(3)=0;axis(tmp);
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('V(s,w)','FontSize',myfontsize,'FontName','Times')
         title('Value function in (w,s) coords','FontSize',myfontsize,'FontName','Times')
         mytitle = strcat(figdir,fName,'FigVWS',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
-
-        %        figure(220+ijk)
-        figure(220)
-        hold off
-        plot(wvec(:)/beta,ENCin(:)/gamma,'-');set(gca,'FontSize',mysmallfontsize);
-        hold on; 
-        plot(downvec(ind)/beta,0,'x',upvec(ind)/beta,0,'x');set(gca,'FontSize',mysmallfontsize);
-        tmp=axis;tmp(4)=1.2*max(ENCin)/gamma;tmp(3)=-1;axis(tmp);
-        xlabel('Posterior mean y_t/n_t','FontSize',myfontsize,'FontName','Times'); ylabel('E[num samples]','FontSize',myfontsize,'FontName','Times')
-        title('E[num samples] in (y_t/n_t,n_t) coords','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat(figdir,fName,'FigENYT',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
-
-        %        figure(260+ijk)
-        figure(260)
-        hold off
-        plot(wvec(:),1-EPCSCin(:),'-',wvec(:),1 - normcdf(abs(wvec(:))/sqrt(scur),0,1),'-.');set(gca,'FontSize',mysmallfontsize);
-        hold on; 
-        plot(downvec(ind),0,'x',upvec(ind),0,'x');set(gca,'FontSize',mysmallfontsize);
-        %        tmp=axis;tmp(4)=1.2*(1-max(EPCSCin));tmp(3)=0;axis(tmp);
-        xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('1-E[PCS]','FontSize',myfontsize,'FontName','Times')
-        title('1-E[PCS given (w, s)]','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat(figdir,fName,'FigEPCSWS',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
+        if figsave print('-deps',mytitle); end	
 
         figure(300)
         hold off
         semilogy(wvec(:),Cinitvec(:),'-.',wvec(:),Cin(:),'--');set(gca,'FontSize',mysmallfontsize);
+        %plot(wvec(:),Cinitvec(:),'-.',wvec(:),Cin(:),'--');set(gca,'FontSize',mysmallfontsize);
         hold on; 
         legend('Cinitvec','Cin');
-        semilogy(downvec(ind),1,'x',upvec(ind),1,'x');set(gca,'FontSize',mysmallfontsize);
-        % tmp=axis;tmp(4)=1.2*max(max(10*dw,max(up1))/beta,max(upvec)/beta);tmp(3)=0;axis(tmp);
+        semilogy(downvec(ind),10^-3,'x',upvec(ind),10^-3,'x');set(gca,'FontSize',mysmallfontsize);
+        %plot(downvec(ind),10^-3,'x',upvec(ind),10^-3,'x');set(gca,'FontSize',mysmallfontsize);
+        tmp=axis;tmp(1)=(min(down1)-dw);tmp(2)=(max(up1)+dw);tmp(3)=0;axis(tmp);
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('V(s,w)','FontSize',myfontsize,'FontName','Times')
         title('Value function in (w,s) coords','FontSize',myfontsize,'FontName','Times')
         mytitle = strcat(figdir,fName,'FigLogVWS',int2str(ijk),'.eps');
-        print('-deps',mytitle);	
-
+        if figsave print('-deps',mytitle); end	
         WidthContinInw = upvec(ind) - downvec(ind)
     end  % diagnostic plot routines
 
@@ -500,7 +432,6 @@ StartFileVal = 1;           % lower index of valid file values
 EndFileVal = numfiles;      % upper index of valid file values
 TimeStamp = clock;
 mymat = strcat(fName,int2str(ijk),'.mat');
-save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps');
-
+save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac');
 
 end
