@@ -1,2 +1,6 @@
-*.mat
 *.eps
+
+*.mat
+
+cleanout/*
+
