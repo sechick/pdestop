@@ -22,16 +22,16 @@ baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
 CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s);   % this is valid terminal reward for discounted rewards, valued in time s currency
 upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
-CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1, 'BaseFileName', 'CF' };
-CGparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4 };
+CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
+CGparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4, 'BaseFileName', 'CG' };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
 Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case of P=1, c=1, discrate = 0.0002, for example
 upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
 Guessfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperguessNoClue};
-Guessscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1, 'BaseFileName', 'Guess' };
-Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4 };
+Guessscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
+Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4, 'BaseFileName', 'Guess' };
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
