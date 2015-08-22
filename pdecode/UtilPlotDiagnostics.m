@@ -127,9 +127,9 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
 %        [C, h]=contour(1/gamma./svec,wvec/beta,ENwsmatrix/gamma); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
         plot(wvec(:)/beta,ENwsmatrix(:,end)/gamma,'-');set(gca,'FontSize',mysmallfontsize);
         hold on; 
-        plot(downvec(ijk)/beta,0,'x',upvec(ijk)/beta,0,'x');set(gca,'FontSize',mysmallfontsize);
+        plot(min(downvec(end))/beta,0,'x',max(upvec(end))/beta,0,'x');set(gca,'FontSize',mysmallfontsize);
         plot(min(cfSoln.Data(ijk).down1(end))/beta,0,'o',(cfSoln.Data(ijk).up1(end))/beta,0,'o');set(gca,'FontSize',mysmallfontsize);
-        tmp=axis;tmp(1)=(min(cfSoln.Data(ijk).down1(end))-dw)/beta;tmp(2)=max((cfSoln.Data(ijk).up1(end))+dw)/beta;axis(tmp);
+        tmp=axis;tmp(1)=(cfSoln.Data(ijk).downvec(end)-dw)/beta;tmp(2)=(cfSoln.Data(ijk).upvec(end)+dw)/beta;axis(tmp);
 %        tmp=axis;tmp(4)=1.2*max(ENCin)/gamma;tmp(3)=-1;axis(tmp);
 %        xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('E[num samples | s]','FontSize',myfontsize,'FontName','Times')
@@ -142,7 +142,7 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
 %        [C, h]=contour(1/gamma./svec,wvec/beta,1-EPCSwsmatrix); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
         plot(wvec(:),1-EPCSwsmatrix(:,end),'-',wvec(:),1 - normcdf(abs(wvec(:))/sqrt(cfSoln.Header.lasts(ijk)),0,1),'-.');set(gca,'FontSize',mysmallfontsize);
         hold on; 
-        plot(downvec(ijk),0,'x',upvec(ijk),0,'x');set(gca,'FontSize',mysmallfontsize);
+        plot(downvec(end),0,'x',upvec(end),0,'x');set(gca,'FontSize',mysmallfontsize);
         tmp=axis;tmp(4)=max(dw,max(1-EPCSwsmatrix(:,end)));tmp(3)=0;axis(tmp);
 %        xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('1-E[PCS]','FontSize',myfontsize,'FontName','Times')
@@ -150,7 +150,7 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         mytitle = strcat(figdir,fName,'FigEPCSWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        WidthContinInw = upvec(ijk) - downvec(ijk)
+        WidthContinInw = upvec(end) - downvec(end)
         
         % plot value function as computed for same value of s on
         % consecutive plots

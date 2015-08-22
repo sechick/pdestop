@@ -98,9 +98,9 @@ if ~isOffline
     warning('computation for online rewards not yet implemented');
     rval = 0;
 end
-if PDEparam.precfactor < 1.0
-    warning('Value of precfactor should be at least 1.0.  Changing precfactor to 1.0');
-	PDEparam.precfactor = 1.0;
+if PDEparam.precfactor < 2.0
+    warning('Value of precfactor should be at least 2.0.  Changing precfactor to 2.0');
+	PDEparam.precfactor = 2.0;
 end
 if ~rval
     return;
@@ -130,7 +130,7 @@ else
     dw = approxmeth(1);
 end
 ds = dw^2 * 2 / 3;          % in trinomial tree, equal probs of going up, straight or down implies this equation to get correct variance of reverse time brownian motion
-SAVEEVERY=250;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
+SAVEEVERY=200;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
 NUMSAVESPERITER=140;  % number of times we save the PDE values, for storage in matrix and files?
 Numds=SAVEEVERY*NUMSAVESPERITER;   % number of time steps per grid, % 8000 or 16000 for example, 
 FRACTOKEEP = 0.9; % use this to remember the state at some earlier time: 0.9 or 085 should get of ripples in many cases, make sure it is smaller than
@@ -166,7 +166,7 @@ if isa(approxmeth, 'function_handle')
     %dsvec = ds*spowvec;
     ceilfactor=1.2; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
     if isDisc   
-        ceilfactor = 6.0;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
+        ceilfactor = 2.5;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
     end
     ratiovec = wmaxvec ./ dwvec;    % figure roughly how many dw from 0 to upper boundary...
     bigw = ceil(ceilfactor*max(ratiovec)); % hit that figure with a multiplier in order to make sure there is a margin of error, especially below boundary
@@ -214,6 +214,7 @@ EPCSCin = 0*Cinitvec; % a priori, assume 0 more samples in expectation at termin
 if PDEparam.DoPlot
     scur
     dw
+    ds
     middlecin1 = Cinitvec((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))
 end
 minindx=1; counter = 1;

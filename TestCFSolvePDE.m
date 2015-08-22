@@ -7,9 +7,6 @@
 %number of samples, and y_t = y_0 + \sum_{i=1}^n x_i, X_i ~
 %Normal(A,\sigma^2), and prior on A ~ Normal(\mu_0, \sigma_0^2), and
 %further t_0 = \sigma^2 / \sigma_0^2.
-% updated: 30 Jan 2008
-
-%%% WORK WITH CONSTRUCTOR METHOD
 
 % Set up generic functions for zero discounting
 generictermreward=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
@@ -26,70 +23,81 @@ CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s);   % this is valid terminal r
 upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1, 'BaseFileName', 'CF' };
-CGparamvec = { 't0', .5, 'tEND', 5000, 'precfactor', 4 };
+CGparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4 };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
 Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case of P=1, c=1, discrate = 0.0002, for example
 upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
 Guessfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperguessNoClue};
+Guessscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1, 'BaseFileName', 'Guess' };
+Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4 };
 
-% Create functions for use with zero discounting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                               %% 
+%%       Create functions for use with zero discounting          %%   offline case
+%%                                                               %% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 scalevec = CFscalevec; 
 paramvec = [CFparamvec, CFfunctionset, baseparams];
-[scale, param] = PDEInputConstructor( scalevec, paramvec )
+[scale, param] = PDEInputConstructor( scalevec, paramvec );
 [scale, param] = PDEInputValidator( scale, param )
-
-% Do the computations
 tic
 [rval, MAXFiles] = PDESolnCompute(scale, param);
-toc
-
 % Load in the data structures form those computations
+toc
 BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
-flo = 1;
-fhi = MAXFiles;
-[rval, cfSoln] = PDESolnLoad(BaseFileName,flo,fhi);
+[rval, cfSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
 if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     UtilPlotDiagnostics(cfSoln);
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                               %% 
+%%     Create functions for use with positive discounting        %%  offline case
+%%                                                               %% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+scalevec = CGscalevec; 
+paramvec = [CGparamvec, CGfunctionset, baseparams];
+[scale, param] = PDEInputConstructor( scalevec, paramvec );
+[scale, param] = PDEInputValidator( scale, param )
+tic
+[rval, MAXFiles] = PDESolnCompute(scale, param);
+toc
+% Load in the data structures form those computations
+BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+[rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    UtilPlotDiagnostics(cgSoln);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                               %% 
+%%       Create functions for use with ad hoc grid size and discounting          %%   offline case
+%%                                                               %% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+scalevec = Guessscalevec; 
+paramvec = [Guessparamvec, Guessfunctionset, baseparams];
+[scale, param] = PDEInputConstructor( scalevec, paramvec );
+[scale, param] = PDEInputValidator( scale, param )
+tic
+[rval, MAXFiles] = PDESolnCompute(scale, param);
+toc
+% Load in the data structures form those computations
+BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+[rval, GuessSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+if GuessSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    UtilPlotDiagnostics(GuessSoln);
+end
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OLD STUFF %%%%%%%%%%%%%%%%%%%%%%
-%SET UP INITIAL PARAMETERS FOR PROBLEM
-sigma=100000;     % variance per single sample in (y,t) space
-discrate = 0.0002;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-discrate = 0.00;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-if discrate == 0
-    c=1;         % cost per single sample in (y,t) space
-    t0=0.25;%0.25; %.25
-    tEND=30000;%20000; %5000
-else
-    c=0;
-    t0=0.5;%0.25; %.25
-    tEND=30000; %25000;20000; %5000
-end
 m=0;         % value of retirement option in (y,t) space
 mu0=0;
 
-APrioriRegret=(sigma/sqrt(t0)) * PsiNorm( abs(mu0-m) / (sigma/sqrt(t0)));
-
-% Set up two data structures to call PDE computation routines.
-% 1) Set up parameters of diffusion problem which can be recaled in some
-% way. These can be changed without recomputing the solution
-PDEscale.c=c;           % cost per single sample in (y,t) space
-PDEscale.sigma=sigma;	% standard deviation of a single sample in (y,t) space
-PDEscale.P=1;           % multiplier times the mean reward for the adoption decision
-PDEscale.discrate = discrate;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-%PDEscale.discrate = 0.00;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-% the following code is a test to see if these values convert ok to scaled
-% problem...
-PDEscale = PDEScaleStandardize(PDEscale);    % compute alpha, beta, gamma, kappainv for this problem
-alpha = PDEscale.alpha;
-beta = PDEscale.beta;
-gamma = PDEscale.gamma;
-kappainv = PDEscale.kappainv;
 
 % 2) Set up some computation specific parameters
 %   a) Some involve the terminal reward function for the stopping, which
@@ -101,17 +109,12 @@ kappainv = PDEscale.kappainv;
 %   field).
 % ** Terminal reward functions: What is expected value of stopping at time
 % s with means in wvec
-CFTermRewardfunc=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-CGTermRewardfunc=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for discounted rewards, valued in time s currency
 % ** Approximate value to go function: if you don't have one for a new
 % terminal reward function you might have, then set this to be the same as
 % for the terminal reward function. if you have better, e.g. VOI of a fixed
 % length sampling policy, a la LL aka KGbeta, or KG*, then it can be used -
 % doing so will help to reduce the bias near time 1/(gamma*tEND) when
 % starting up the recursion process
-'SEC: need to fix the approx value functions'
-CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s);   % this is valid terminal reward for discounted rewards, valued in time s currency
 % ** An approximation to the optimal upper stopping boundary. This is a bit of a
 % chicken or the egg problem. Once the recursion has been run, you may have
 % an approximation - or you might have some analytical results such as from
@@ -127,49 +130,49 @@ upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for n
 %
 if false  % change this to evaluate to true if you want to try the 'ad hoc' computation which does not relay on
     BaseFileName='WildWest'
-    PDEparam.termrewardfunc = @(wvec,s,p1,p2) max(wvec,0); % or some other function which is the expected value of stopping at a given time in (w,s) coordinates
-    PDEparam.approxvaluefunc = PDEparam.termrewardfunc ; % can use some other function, should be at least as big as termrewardfunction
-    PDEparam.approxmethod = upperguessNoClue;
-elseif PDEscale.discrate == 0 % set up parameters for undiscounted case of C&F
+    param.termrewardfunc = @(wvec,s,p1,p2) max(wvec,0); % or some other function which is the expected value of stopping at a given time in (w,s) coordinates
+    param.approxvaluefunc = param.termrewardfunc ; % can use some other function, should be at least as big as termrewardfunction
+    param.approxmethod = upperguessNoClue;
+elseif scale.discrate == 0 % set up parameters for undiscounted case of C&F
     % Set up file name for saving results
     BaseFileName='CF';
-    PDEparam.termrewardfunc = CFTermRewardfunc;
-    PDEparam.approxvaluefunc = CFApproxValuefunc ;
-    PDEparam.approxmethod = upperNoDisc;
+    param.termrewardfunc = CFTermRewardfunc;
+    param.approxvaluefunc = CFApproxValuefunc ;
+    param.approxmethod = upperNoDisc;
 else % set up parameters for discounted case of C&G
     % Set up file name for saving results
     BaseFileName='CG';
     'SEC: need to validate discounted reward computation'
-    PDEparam.termrewardfunc = CGTermRewardfunc;
-    PDEparam.approxvaluefunc = CGApproxValuefunc;
-    PDEparam.approxmethod = upperDisc;
+    param.termrewardfunc = CGTermRewardfunc;
+    param.approxvaluefunc = CGApproxValuefunc;
+    param.approxmethod = upperDisc;
 end
 %   b) Some parameters to drive the computations, such as the range of values of n0 to compute, from t0 to tEND,
 %       where unknown mean W ~ Normal(mu0, sigma^2/n0), online says if
 %       there is online learning, etc.
-PDEparam.online = false;% true if online learning is active, false otherwise
-PDEparam.t0 = t0;      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-PDEparam.tEND = tEND;  % upper range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-PDEparam.retire = m;    % value of retirement option: ignored for discrate=0, taken to be alternative for discrate>0
-PDEparam.finiteT = false; % false or negative for infinite horizon problem, or a positive finite time horizon. 
+param.online = false;% true if online learning is active, false otherwise
+param.t0 = t0;      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
+param.tEND = tEND;  % upper range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
+param.retire = m;    % value of retirement option: ignored for discrate=0, taken to be alternative for discrate>0
+param.finiteT = false; % false or negative for infinite horizon problem, or a positive finite time horizon. 
 % Even if false, need to set tEND to something positve as a 'boundary' condition/time for stopping the PDE solution
 % when finitT is true, then the approxvaluefunc is ignored and termrewardfunc is used instead
 
 %   c) Some parameters which guide the computation of the solution and
 %   diagnostics during the computation.
-if PDEscale.discrate > 0    % precision factor can be smaller for discounted rewards, as larger dw can be used
-    PDEparam.precfactor = 10.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
+if scale.discrate > 0    % precision factor can be smaller for discounted rewards, as larger dw can be used
+    param.precfactor = 10.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
 else
-    PDEparam.precfactor = 30.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
+    param.precfactor = 30.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
 end
-PDEparam.DoPlot = true;       % true to turn on diagnostic plots
+param.DoPlot = true;       % true to turn on diagnostic plots
 
-PDEscale
-PDEparam
+scale
+param
 
 % Do the computations
 tic
-[rval, MAXFiles] = PDESolnCompute(BaseFileName, PDEscale, PDEparam);
+[rval, MAXFiles] = PDESolnCompute(BaseFileName, scale, param);
 toc
 
 % Load in the data structures form those computations
@@ -180,7 +183,7 @@ if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps
     UtilPlotDiagnostics(cfSoln);
 end
 
-APrioriRegret=(sigma/sqrt(t0)) * PsiNorm( abs(mu0-m) / (sigma/sqrt(t0)))
+APrioriRegret=(scale.sigma/sqrt(t0)) * PsiNorm( abs(mu0-m) / (scale.sigma/sqrt(t0)))
 tmppp=PDEGetVals(cfSoln,(mu0-m)*beta,1/(t0*gamma))/beta
 APrioriRegret-tmppp
 
@@ -213,7 +216,7 @@ up = cfSoln.Computed.accumuppper;
 lo = cfSoln.Computed.accumlower;
 findex = cfSoln.Computed.fileindx;
 
-if PDEparam.DoPlot
+if param.DoPlot
     if isa(cfSoln.Header.PDEparam.approxmethod,  'function_handle')
     %    dt = 1/gamma/s0 - 1/gamma/(s0+ds)
     %    dmu=dw/beta
@@ -243,7 +246,7 @@ if PDEparam.DoPlot
 end
 
 
-    mwig = PDEparam.retire*beta;
+    mwig = param.retire*beta;
     
     % GET INDEX INTO RIGHT STUCTURE BASED ON TIME
     [a, b] = min(s0 > sbvec);
@@ -263,10 +266,10 @@ PDEGetVals(cfSoln,wvec,sval) % try to get solution for values of w in wvec at ti
 
 %%%%%%%%% convert to standardized version in (w,s) with w brownian motion
 %%%%%%%%% in -s time scale
-mwig = PDEscale.beta * PDEparam.retire
-w0= PDEscale.beta*(mu0-PDEparam.retire)
-s0 = 1 / (PDEscale.gamma * PDEparam.t0)
-sEND = 1 / (PDEscale.gamma * PDEparam.tEND)
+mwig = scale.beta * param.retire
+w0= scale.beta*(mu0-param.retire)
+s0 = 1 / (scale.gamma * param.t0)
+sEND = 1 / (scale.gamma * param.tEND)
 
 % set up info for plotting stuff
 myfontsize=16
@@ -274,8 +277,8 @@ mysmallfontsize=14
 points = 144*3 %spacing between labels on contours - made so that only one label appears per line
 
 
-%[ta tb tc]=fminbnd('Bztauapproxc',0,1/gamma/n0base,optimset('TolFun',beta/sigma,'MaxIter',10^4),0,1/gamma/n0base);       % FIXED VERSION
-[ta tb tc]=fminbnd('Bztauapproxc',0,s0,optimset('TolFun',beta/sigma,'MaxIter',10^4),0,s0);       % FIXED VERSION
+%[ta tb tc]=fminbnd('Bztauapproxc',0,1/gamma/n0base,optimset('TolFun',beta/scale.sigma,'MaxIter',10^4),0,1/gamma/n0base);       % FIXED VERSION
+[ta tb tc]=fminbnd('Bztauapproxc',0,s0,optimset('TolFun',beta/scale.sigma,'MaxIter',10^4),0,s0);       % FIXED VERSION
 -tb/beta - c/gamma
 sig0*PsiNorm(-mu0/sig0)
 
@@ -342,7 +345,7 @@ for j=1:numbetas;
     betamatrix(j,:) = ytinit;
     nrepslookahead=betastepvec(j)
     for i=length(ybndup1step):-1:1
-        [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),sigma,tvec(i),nrepslookahead,nrepslookahead*c);
+        [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
         ybndup1step(i)=ytinit;
         ytinit=ytinit*0.99;
     end
@@ -377,7 +380,7 @@ tvec = 1/gamma./sbvec;
 ytinit = ybndup1step(length(ybndup1step))*tvec(length(ybndup1step));
 nrepslookahead=1;
 for i=length(ybndup1step):-1:1
-    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),sigma,tvec(i),nrepslookahead,nrepslookahead*c);
+    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
     ybndup1step(i)=ytinit;
     ytinit=ytinit*0.99;
 end
@@ -387,7 +390,7 @@ ybndupNstep = ybndup1step; %initialize vector
 ytinit = ybndupNstep(length(ybndupNstep))*tvec(length(ybndupNstep)) * 1.01;
 nrepslookahead=10;
 for i=length(ybndupNstep):-1:1
-    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),sigma,tvec(i),nrepslookahead,nrepslookahead*c);
+    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
     ybndupNstep(i)=ytinit;
     ytinit=ytinit*1.01;
 end
@@ -397,7 +400,7 @@ ybndupNbisstep = ybndup1step; %initialize vector
 ytinit = ybndupNstep(length(ybndupNstep))*tvec(length(ybndupNstep)) * 1.01;
 nrepslookahead=100;
 for i=length(ybndupNstep):-1:1
-    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),sigma,tvec(i),nrepslookahead,nrepslookahead*c);
+    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
     ybndupNbisstep(i)=ytinit;
     ytinit=ytinit*1.01;
 end
