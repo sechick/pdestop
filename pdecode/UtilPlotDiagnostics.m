@@ -1,4 +1,4 @@
-function [rval] = UtilPlotDiagnostics( cfSoln, figdir )
+function [rval] = UtilPlotDiagnostics( cfSoln )
 % UtilPlotDiagnostics: Plot a bunch of plots for the solution of the PDE
 % found in cfSoln. Useful for visualizing the data structures, and for
 % diagnostics for the data sets in question. plots are saved in the
@@ -12,12 +12,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln, figdir )
     points = 144*3; %spacing between labels on contours - made so that only one label appears per line
 
     % do a bit of input parameter checking
-    if nargin < 2
-        figdir = 'Figure\';
-        figsave = true;
-    else
-        figsave = isa(figdir,'char');
-    end
+    figdir = cfSoln.Header.PDEparam.figdir;
+    figsave = true;
 
     % create the directory for the figures if it does not exist already and the figures are
     % to be saved
@@ -147,7 +143,7 @@ function [rval] = UtilPlotDiagnostics( cfSoln, figdir )
         plot(wvec(:),1-EPCSwsmatrix(:,end),'-',wvec(:),1 - normcdf(abs(wvec(:))/sqrt(cfSoln.Header.lasts(ijk)),0,1),'-.');set(gca,'FontSize',mysmallfontsize);
         hold on; 
         plot(downvec(ijk),0,'x',upvec(ijk),0,'x');set(gca,'FontSize',mysmallfontsize);
-        tmp=axis;tmp(4)=1.1*max(dw,max(1-EPCSwsmatrix(:,end)));tmp(3)=-dw;axis(tmp);
+        tmp=axis;tmp(4)=max(dw,max(1-EPCSwsmatrix(:,end)));tmp(3)=0;axis(tmp);
 %        xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('1-E[PCS]','FontSize',myfontsize,'FontName','Times')
         title('1-E[PCS given (w, s)]','FontSize',myfontsize,'FontName','Times')

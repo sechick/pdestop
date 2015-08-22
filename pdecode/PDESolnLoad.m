@@ -1,4 +1,4 @@
-function [rval, PDESolnStructure] = PDESolnLoad(B1filestring,filestart,fileend)
+function [rval, PDESolnStructure] = PDESolnLoad(B1filestring, filestart, fileend)
 % PURPOSE: 
 %   Load in the data from files in order to have estimates of the
 %   standardized optimal expected dynamic reward (OEDR) for the Bandit 
@@ -34,11 +34,12 @@ PDESolnStructure = [];  % default to empty solution structure
 routinename = 'PDESolnLoad';
 
 % error checking on file name
-if (nargin<1) || (length(B1filestring)==0)
-    B1filestring = 'PDEData';
+if (nargin<1) 
+    [a,b]=PDEInputConstructor();   % get default values for file string
+    B1filestring = strcat(b.matdir,b.BaseFileName);
     warning(sprintf('%s: using default PDE solution file name %s\n',routinename,B1filestring));
 end
-    
+
 % attempt to read file with global info about PDE solution
 ijk = 0;    
 mymat = strcat(strcat(B1filestring,int2str(ijk)),'.mat');

@@ -1,5 +1,7 @@
 *.eps
 
+*.asv
+
 *.mat
 
 cleanout/*

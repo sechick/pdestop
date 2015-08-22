@@ -1,4 +1,4 @@
-function [rval, numfiles] = PDESolnCompute(fName, PDEscalein, PDEparam)
+function [rval, numfiles] = PDESolnCompute(PDEscalein, PDEparam)
 % CFSolvePDE: Solves free boundary problem in scaled coordinates for the
 % sequential sampling for simulation optimization. 
 %
@@ -6,8 +6,6 @@ function [rval, numfiles] = PDESolnCompute(fName, PDEscalein, PDEparam)
 % structures PDEscale and PDEparam, please see TestSolvePDE.m.
 %
 % INPUTS: 
-%   fName: base name for files to hold the data structures with the
-%       solutions of the free boundary PDE.
 %   PDEscale: contains basic parameters of the problem which might be
 %      changed without need to recompute the PDE solution (c, sigma, 
 %      discrate, P). The solution computation will compute the relevant 
@@ -29,7 +27,8 @@ function [rval, numfiles] = PDESolnCompute(fName, PDEscalein, PDEparam)
 %       which contain solutions for PDE in standardized coordinates 
 %       Contents include: upper and lower boundaries, standardized: reward
 %       function, PCS, expected number of samples to stop time, ...
-%       also creates BASEFILName0.mat, with summary information for files.
+%       also creates fBame0.mat, with summary information for files, where
+%       fName is determined by PDEparam field.
 %   Side effect: a bunch of plots as calculations are run - if they don't
 %       'look right' then there is probably a numerical stability issue to
 %       address.
@@ -46,7 +45,11 @@ function [rval, numfiles] = PDESolnCompute(fName, PDEscalein, PDEparam)
 % standardize the scaling again
 PDEscale = PDEScaleStandardize(PDEscalein);
 
-figdir = 'Figure\';
+figdir = PDEparam.figdir;
+matdir = PDEparam.matdir;
+fName = PDEparam.BaseFileName;
+%
+%figdir = 'Figure\';
 figsave = true;
 
 % create the directory for the figures if it does not exist already and the figures are
@@ -346,7 +349,7 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     lasthelds(ijk) = lastsaveds; % remember the value of s for restarting the next block
     
     % save results to file
-    mymat = strcat(fName,int2str(ijk),'.mat');
+    mymat = strcat(matdir,fName,int2str(ijk),'.mat');
 % should be able to reconstruct Vwsmatrix from Bwsmatrix and PDEscale, PDEparam.
     save(mymat,'Bwsmatrix','ENwsmatrix','EPCSwsmatrix','svec','wvec','upvec','downvec','up1','down1');
 
@@ -431,7 +434,7 @@ ijk=0;
 StartFileVal = 1;           % lower index of valid file values
 EndFileVal = numfiles;      % upper index of valid file values
 TimeStamp = clock;
-mymat = strcat(fName,int2str(ijk),'.mat');
+mymat = strcat(matdir,fName,int2str(ijk),'.mat');
 save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac');
 
 end

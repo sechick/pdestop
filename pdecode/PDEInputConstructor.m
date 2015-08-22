@@ -91,16 +91,18 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
 
     pdeparam.fixedP = true; % set to true if expected reward on stopping is for P * expected reward per patient, false if patients not tested due to early stopping can also benefit from better alterantive
 
-    [rval, pdescale, pdeparam] = PDEInputModifier(pdescale, pdeparam, scalearray, paramarray);
+    [rval, pdescale2, pdeparam2] = PDEInputModifier(pdescale, pdeparam, scalearray, paramarray);
 
-    if ~isfield(pdeparam,'BaseNameFile') % if no file name was passed, then come up with a default name based on discount rate value
-        if pdescale.discrate == 0.0  % continuous time discount rate per sample, e.g. 0.0 or .00001
-            pdeparam.BaseNameFile = 'CF'; % base text for file names for output
+    if ~isfield(pdeparam2,'BaseFileName') % if no file name was passed, then come up with a default name based on discount rate value
+        if pdescale2.discrate == 0.0  % continuous time discount rate per sample, e.g. 0.0 or .00001
+            pdeparam2.BaseFileName = 'CF'; % base text for file names for output
         else
-            pdeparam.BaseNameFile = 'CG'; % base text for file names for output
+            pdeparam2.BaseFileName = 'CG'; % base text for file names for output
         end
     end
 
+    pdescale = pdescale2;
+    pdeparam = pdeparam2;
 % COMPUTED PARAMETERS: If more are put here, please fix the code to insure
 % that they don't overwrite parameter values which may have been entered by
 % the end user.

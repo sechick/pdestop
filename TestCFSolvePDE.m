@@ -9,6 +9,54 @@
 %further t_0 = \sigma^2 / \sigma_0^2.
 % updated: 30 Jan 2008
 
+%%% WORK WITH CONSTRUCTOR METHOD
+
+% Set up generic functions for zero discounting
+generictermreward=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
+CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc};
+CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
+CFparamvec = { 't0', .25, 'tEND', 20000, 'precfactor', 4, 'BaseFileName', 'CF' };
+baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
+%figdir Figure\, matdir Matfiles\ UnkVariance 0
+
+% Set up generic functions for positive discounting
+CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s);   % this is valid terminal reward for discounted rewards, valued in time s currency
+upperDisc=@(s,p1,p2) CGApproxBoundW(s);
+CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
+CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1, 'BaseFileName', 'CF' };
+CGparamvec = { 't0', .5, 'tEND', 5000, 'precfactor', 4 };
+
+% generic functions when the 'guesses' are still being made regarding the
+% upper boundary's approximate value.
+Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case of P=1, c=1, discrate = 0.0002, for example
+upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
+Guessfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperguessNoClue};
+
+% Create functions for use with zero discounting
+scalevec = CFscalevec; 
+paramvec = [CFparamvec, CFfunctionset, baseparams];
+[scale, param] = PDEInputConstructor( scalevec, paramvec )
+[scale, param] = PDEInputValidator( scale, param )
+
+% Do the computations
+tic
+[rval, MAXFiles] = PDESolnCompute(scale, param);
+toc
+
+% Load in the data structures form those computations
+BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+flo = 1;
+fhi = MAXFiles;
+[rval, cfSoln] = PDESolnLoad(BaseFileName,flo,fhi);
+if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    UtilPlotDiagnostics(cfSoln);
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OLD STUFF %%%%%%%%%%%%%%%%%%%%%%
 %SET UP INITIAL PARAMETERS FOR PROBLEM
 sigma=100000;     % variance per single sample in (y,t) space
 discrate = 0.0002;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
@@ -78,19 +126,19 @@ Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case o
 upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
 %
 if false  % change this to evaluate to true if you want to try the 'ad hoc' computation which does not relay on
-    BaseNameFile='WildWest'
+    BaseFileName='WildWest'
     PDEparam.termrewardfunc = @(wvec,s,p1,p2) max(wvec,0); % or some other function which is the expected value of stopping at a given time in (w,s) coordinates
     PDEparam.approxvaluefunc = PDEparam.termrewardfunc ; % can use some other function, should be at least as big as termrewardfunction
     PDEparam.approxmethod = upperguessNoClue;
 elseif PDEscale.discrate == 0 % set up parameters for undiscounted case of C&F
     % Set up file name for saving results
-    BaseNameFile='CF';
+    BaseFileName='CF';
     PDEparam.termrewardfunc = CFTermRewardfunc;
     PDEparam.approxvaluefunc = CFApproxValuefunc ;
     PDEparam.approxmethod = upperNoDisc;
 else % set up parameters for discounted case of C&G
     % Set up file name for saving results
-    BaseNameFile='CG';
+    BaseFileName='CG';
     'SEC: need to validate discounted reward computation'
     PDEparam.termrewardfunc = CGTermRewardfunc;
     PDEparam.approxvaluefunc = CGApproxValuefunc;
@@ -121,15 +169,15 @@ PDEparam
 
 % Do the computations
 tic
-[rval, MAXFiles] = PDESolnCompute(BaseNameFile, PDEscale, PDEparam);
+[rval, MAXFiles] = PDESolnCompute(BaseFileName, PDEscale, PDEparam);
 toc
 
 % Load in the data structures form those computations
 flo = 1;
 fhi = MAXFiles;
-[rval, cfSoln] = PDESolnLoad(BaseNameFile,flo,fhi);
+[rval, cfSoln] = PDESolnLoad(BaseFileName,flo,fhi);
 if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
-    UtilPlotDiagnostics(cfSoln,'Figure\');
+    UtilPlotDiagnostics(cfSoln);
 end
 
 APrioriRegret=(sigma/sqrt(t0)) * PsiNorm( abs(mu0-m) / (sigma/sqrt(t0)))
@@ -246,7 +294,7 @@ sig0*PsiNorm(-mu0/sig0)
 % REASSEMBLE THE BOUNDARY FROM THE VARIOUS FILES
 for ijk=1:MAXFiles
 %   reload data
-    mymat = strcat(strcat(BaseNameFile,int2str(ijk)),'.mat');
+    mymat = strcat(strcat(BaseFileName,int2str(ijk)),'.mat');
 %    save(mymat,'svec','wvec','Bwsmatrix','upvec','up1');
     S=load(mymat);
     if ijk==1

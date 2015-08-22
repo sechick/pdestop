@@ -97,9 +97,9 @@ if length(param.matdir) > 0
         mkdir(param.matdir)
     end
 end
-if length(param.BaseNameFile) == 0
-    param.BaseNameFile = defaultparam.BaseNameFile;
-    errorlist = sprintf('%s\n%s: base file name for pde solution output set to default, %f\n',errorlist,routinename,param.BaseNameFile);
+if length(param.BaseFileName) == 0
+    param.BaseFileName = defaultparam.BaseFileName;
+    errorlist = sprintf('%s\n%s: base file name for pde solution output set to default, %f\n',errorlist,routinename,param.BaseFileName);
 end
 
 if ~isa(param.termrewardfunc, 'function_handle')

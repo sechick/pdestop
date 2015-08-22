@@ -110,7 +110,8 @@ for i=1:loopmax
     PDEscale.discrate = discrate;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
     PDEscale = PDEScaleStandardize(PDEscale);    % compute alpha, beta, gamma, kappainv for this problem
 
-    BaseNameFile=['CF' baseName];
+   
+    PDEparam.BaseFileName = ['CF' baseName];      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
     PDEparam.t0 = t0;      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
     PDEparam.tEND = tEND;  % upper range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
     PDEparam.termrewardfunc = basicstopfunc;
@@ -120,7 +121,7 @@ for i=1:loopmax
     PDEparam.DoPlot = true;       % true to turn on diagnostic plots
 
     tic
-    [rval, MAXFiles] = PDESolnCompute(BaseNameFile, PDEscale, PDEparam);
+    [rval, MAXFiles] = PDESolnCompute(PDEscale, PDEparam);
     if i==1
         [rval, CFOff] = PDESolnLoad(BaseNameFile,1,MAXFiles);
     else
