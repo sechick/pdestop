@@ -60,8 +60,8 @@ mu0=0.0;
 % s with means in wvec
 basicstopfunc=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for discounted rewards, valued in time s currency
 % ** Approximate value to go function: 
-CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s);   % this is valid terminal reward for discounted rewards, valued in time s currency
+CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s,p1);   % this is valid terminal reward for discounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 

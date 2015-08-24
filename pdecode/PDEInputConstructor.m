@@ -49,8 +49,8 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
     pdeparam.termrewardfunc = @(wvec,s,p1,p2)max(wvec,0); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
     %termrewardfunc: @(wvec,s,p1,p2)max(wvec,0)
     pdeparam.approxvaluefunc = @(wvec,s,p1,p2)max(wvec,0); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
-    %approxvaluefunc: @(wvec,s,p1,p2)PDECFKGs(wvec,s)
-    %approxvaluefunc: @(wvec,s,p1,p2)PDECGKGs(wvec,s)
+    %approxvaluefunc: @(wvec,s,p1,p2)PDECFKGs(wvec,s,p1)
+    %approxvaluefunc: @(wvec,s,p1,p2)PDECGKGs(wvec,s,p1)
     pdeparam.approxmethod = @(s,p1,p2)CFApproxBoundW(s); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
     %approxmethod: @(s,p1,p2)CGApproxBoundW(s)
     %approxmethod: [ .06 1500] % for CF, for example, vector gives the

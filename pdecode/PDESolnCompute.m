@@ -196,8 +196,8 @@ Cout=Cin;           % only to initialize
 ENCin = 0*Cinitvec; % a priori, assume 0 more samples in expectation at terminal time
 ENCout = ENCin; % a priori, assume 0 more samples in expectation at terminal time
 % structures for PCS
-EPCSCout = 0*Cinitvec; % a priori, assume 0 more samples in expectation at terminal time
-EPCSCin = 0*Cinitvec; % a priori, assume 0 more samples in expectation at terminal time
+EPCSCout = normcdf(abs(wvec)./sqrt(scur),0,1); % probability of correct selection if choice made at time scur
+EPCSCin = EPCSCout; 
 
 % CHUNK2: Defensive coding section, to check if ds and sinit are ok in size relative to each other.
 % Try to iterate to find a value of s such that the continuation set
@@ -215,7 +215,7 @@ if PDEparam.DoPlot
     scur
     dw
     ds
-    middlecin1 = Cinitvec((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))
+    middlecin1 = Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))
 end
 minindx=1; counter = 1;
 while minindx==1
@@ -235,18 +235,26 @@ while minindx==1
     Cout=max(Cinitvec,Cout);
     Cin=Cout;                           % iterate to obtain new initial condition
 
-    scur=sout;
-    
     stopped = ( abs(Cout - Cinitvec) < myeps ); % check if we have stopped or not.
     [~, minindx] = min(stopped);             % get index to first grid point above lower stopping boundary
     [~, maxindx] = min(flipdim(stopped,2));  % get index to first grid point below upper stopping boundary
     maxindx = wvsize + 1 - maxindx; %(scur < sEND - 2*ds)   % fix the value of minindx
     hifrac = max(hifrac,maxindx/length(stopped)); % compute some diagnostic stats for how much of the grid is being used by the contin set.
     lowfrac = min(lowfrac,minindx/length(stopped));
-    if (~PDEparam.finiteT) & ((counter < SAVEEVERY) | 0) % unless it is for finite horizon, force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the  initializaiton of the terminal condition
+
+    EPCSCout(2:(wvsize-1)) = ( EPCSCin(1:(wvsize-2)) + EPCSCin(2:(wvsize-1)) + EPCSCin(3:wvsize)) / 3; % update PCS
+    EPCSCout(stopped) = normcdf(abs(wvec(stopped))./sqrt(sout),0,1);
+    EPCSCin = EPCSCout; 
+    ENCout(2:(wvsize-1)) = ( ENCin(1:(wvsize-2)) + ENCin(2:(wvsize-1)) + ENCin(3:wvsize)) / 3  + (1/scur-1/sout);
+    ENCout(stopped) = 0;
+    ENCin = ENCout; 
+
+    if (~PDEparam.finiteT) & (sout < sEND - 2*ds) % unless it is for finite horizon, force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the  initializaiton of the terminal condition
 %    if (counter < 20*PDEparam.precfactor)  % force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the initializaiton of the terminal condition
         minindx = 1;
-    end
+    end % sEND
+    
+    scur=sout;
     counter = counter + 1;
 end 
 if PDEparam.DoPlot
@@ -255,8 +263,8 @@ if PDEparam.DoPlot
     scur
 %    numinitchecks = (scur - sinit)/ds
 %    scurminindxmaxindx = [scur minindx maxindx]
-%    middlecin = Cin(minindx-3:maxindx+3)-Cinitvec(minindx-3:maxindx+3)
-    middlecin = Cin((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))-Cinitvec((bigw-3):(bigw+5))-max(0,wvec((bigw-3):(bigw+5)))
+%    middlecin = Cin(minindx-4:maxindx+4)-Cinitvec(minindx-4:maxindx+4)
+    middlecin = Cin((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))-Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))
 end
 
 % CHUNK3: Now that we have a point (w=0,s) that is in the continuation set, the
@@ -392,7 +400,7 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     % double check boundaries to see if bias corrected bound exceeds max w
     % value in calculation or not. if there is an error here, then need to
     % set bigw to a larger value
-    if (max(max(up1),max(upvec)) >= max(wvec))
+    if max(max(up1),max(up1)) >= max(wvec) % also put -down1?
         error('error: need bigger initial number of grid points for w direction');
         return;
     end

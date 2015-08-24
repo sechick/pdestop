@@ -33,8 +33,12 @@ rval = 1;
 for i=1:(scalearrayarrlen/2)
     if isfield(pdescale,scalearray{2*i-1}) %|| strcmp(scalearray{2*i-1},'mumax') ||  strcmp(scalearray{2*i-1},'mumin')
         pdescale.(scalearray{2*i-1}) = scalearray{2*i};
+    elseif isfield(pdeparam,paramarray{2*i-1})
+        warning(sprintf('attempt ignored to add field of param to scale structure: %s',char(scalearray{2*i-1}))); 
+%        pdescale.(scalearray{2*i-1}) = scalearray{2*i};
+        rval = 0;
     else
-%        warning(sprintf('adding pdescale field: %s',char(scalearray{2*i-1}))); 
+        warning(sprintf('adding pdescale field: %s',char(scalearray{2*i-1}))); 
         pdescale.(scalearray{2*i-1}) = scalearray{2*i};
 %        rval = 0;
     end
@@ -46,10 +50,13 @@ for i=1:(paramarrlen/2)
 %            strcmp(paramarray{2*i-1},'dmu') || ...
  %           strcmp(paramarray{2*i-1},'simFreqDeltaVec') 
         pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
+    elseif isfield(pdescale,paramarray{2*i-1})
+        warning(sprintf('attempt ignored to add field of scale to param structure: %s',char(scalearray{2*i-1}))); 
+%        pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
+        rval = 0;
     else
-%        warning(sprintf('adding pdeparam field: %s',char(scalearray{2*i-1}))); 
+        warning(sprintf('adding pdeparam field: %s',char(scalearray{2*i-1}))); 
         pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
-        i
 %        rval = 0;
     end
 end

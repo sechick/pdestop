@@ -8,22 +8,24 @@
 %Normal(A,\sigma^2), and prior on A ~ Normal(\mu_0, \sigma_0^2), and
 %further t_0 = \sigma^2 / \sigma_0^2.
 
-% Set up generic functions for zero discounting
+% Set up generic functions for zero discounting,
 generictermreward=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc};
+CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc};
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
-CFparamvec = { 't0', .25, 'tEND', 20000, 'precfactor', 4, 'BaseFileName', 'CF' };
+CFparamvec = { 't0', .3, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'CF' };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
 %figdir Figure\, matdir Matfiles\ UnkVariance 0
 
 % Set up generic functions for positive discounting
-CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s);   % this is valid terminal reward for discounted rewards, valued in time s currency
+CGApproxValuefunc=@(wvec,s,p1,p2) PDECGKGs(wvec,s,p1);   % this is valid terminal reward for discounted rewards, valued in time s currency
 upperDisc=@(s,p1,p2) CGApproxBoundW(s);
+CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
-CGparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4, 'BaseFileName', 'CG' };
+CGparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'CG' };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
@@ -31,7 +33,7 @@ Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case o
 upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
 Guessfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperguessNoClue};
 Guessscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
-Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 4, 'BaseFileName', 'Guess' };
+Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'Guess' };
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
@@ -92,6 +94,23 @@ end
 
 
 
+%%% To TEST KGs stuff for case of no discounting
+figure(1000)
+s0 = 1/scale.gamma/param.tEND;
+dw = .005;
+bigw = 15;
+wvec = (-bigw:bigw)*dw;
+voikg=PDECFKGs(wvec,s0,scale)-max(0,wvec);
+plot(wvec,voikg);
+
+%%% To TEST KGs stuff for case of discounting
+figure(1001)
+s0 = 1/scale.gamma/param.tEND;
+dw = .01;
+bigw = 20;
+wvec = (-2*bigw:bigw)*dw;
+voikg=PDECGKGs(wvec,s0,scale)-max(0,wvec);
+plot(wvec,voikg);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OLD STUFF %%%%%%%%%%%%%%%%%%%%%%
