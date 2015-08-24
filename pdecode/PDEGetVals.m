@@ -13,7 +13,8 @@ function [ Vvec, Bwsval, ENvec, PCSvec ] = PDEGetVals(cfSoln,wvec,sval)
 % the probability of correct selection, in expectation, given wvec, sval.
 %
 % For purposes here, continuation region is approximated by the upper and
-% lower boundary computed by the finite difference method, not the
+% lower boundary computed by the finite difference method, with the first
+% order bias correction from Chernoff & Petkau methods, not the
 % asymptotic approximations
 %
 % it is presumed that cfSoln was loaded by PDESolnLoad(), and that function
@@ -54,6 +55,8 @@ if sval < firsts(1)  % sval was below the range for which data was originally co
     % therefore, use approximation to value function provided during
     % computation time 
     Vvec = approxfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
+    % from value function, subtract off reward from stopping immediately in
+    % order to get the value of information from sequential sampling
     Bwsval = Vvec-stopfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
     % FIX: Might be able to do a smarter approximation by looking at
     % solution at smallest value of s which had computations.
@@ -63,13 +66,19 @@ elseif sval > biggests % sval is above the range for which data was originally c
     Bwsval = Vvec-stopfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
     warning( sprintf('sval = %f is above range of s, (%f, %f), computed: using approx func',sval,firsts(1),biggests));
 else
+    % find which block of the data structue we should look: put block
+    % number into variable 'ind'
     isabove = (sval > lasts);
     [~, ind] = min(isabove);      % here, we know minimum will be 0 becase sval <= biggests, so b is index of file to use
+    % get data for grid from block 'ind'
     wv = cfSoln.Data(ind).wvec;
     svec = cfSoln.Data(ind).svec;
     Bwsmatrix = cfSoln.Data(ind).Bwsmatrix;
+    % interpolate upper and lower boundary from the bias-corrected boundary
+    % from the finite difference.
     upper = interp1( svec, cfSoln.Data(ind).upvec, sval );
     lower = interp1( svec, cfSoln.Data(ind).downvec, sval );
+    % interpolate the value of sampling at time sval for values of w in wvec
     Bwsval=interp2(svec,wv,Bwsmatrix,sval,wvec(:));
     if min(Bwsval) < 0
         warning('interpolated value of continuing to sample computed to be negative')
