@@ -90,10 +90,6 @@ end
 isDisc = (PDEscale.discrate > 0);
 isOffline = ~PDEparam.online;
 
-if isDisc
-    warning('computation for discounted rewards still being validated');
-%    rval = 0;
-end
 if ~isOffline
     warning('computation for online rewards not yet implemented');
     rval = 0;
@@ -261,9 +257,6 @@ if PDEparam.DoPlot
     dw
     bigw
     scur
-%    numinitchecks = (scur - sinit)/ds
-%    scurminindxmaxindx = [scur minindx maxindx]
-%    middlecin = Cin(minindx-4:maxindx+4)-Cinitvec(minindx-4:maxindx+4)
     middlecin = Cin((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))-Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))
 end
 
@@ -313,13 +306,13 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         hifrac = max(hifrac,maxindx/length(stopped)); % compute some diagnostic stats for how much of the grid is being used by the contin set.
         lowfrac = min(lowfrac,minindx/length(stopped));
 
-        % FIX: update expected number of samples til stopping time: to be
+        % update expected number of samples til stopping time: to be
         % debugged
         ENCout(2:(wvsize-1)) = ( ENCin(1:(wvsize-2)) + ENCin(2:(wvsize-1)) + ENCin(3:wvsize)) / 3  + (1/scur-1/sout);
         ENCout(stopped) = 0;
         ENCin = ENCout; 
 
-        % FIX: compute PCS: to be debuged. 
+        % compute PCS: to be debuged. 
         EPCSCout(2:(wvsize-1)) = ( EPCSCin(1:(wvsize-2)) + EPCSCin(2:(wvsize-1)) + EPCSCin(3:wvsize)) / 3;
         EPCSCout(stopped) = normcdf(abs(wvec(stopped))./sqrt(sout),0,1); % put z-statistic in stopping zone, which is prob that a normal with mean w and std s is > 0
         EPCSCin = EPCSCout; 
@@ -406,6 +399,11 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     end
 
     %   now reset the ds and dw values to scale up an order of magnitude
+    %FIX: if code to be extended for further orders of magnitude difference
+    %between s0 and sEND, then this might be made adaptive: doing the
+    %doubling of dw only if there is still enough number of dw up to
+    %boundary, might need to increase bigw if this adaptive grid
+    %flexibility is added.
     ds = 4*ds;      % quadruple the time step
     dw = 2*dw;       % double the space step, but keep the same number of steps
     wvec=2*wvec;    % change the w-space vector, so range is twice as wide with same number of steps

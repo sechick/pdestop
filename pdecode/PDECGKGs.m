@@ -29,7 +29,7 @@ if s0 <= 0 % need a valid value of s in order to do computations.
 end
 
 %elseif nargin < 3   % no parameter passed in for scale: try to flood
-    NUMCHECKS = 1000; % FIX: Can probabably find a way to speed this check, but this is reasonable proxy for the moment.
+    NUMCHECKS = 2000; % FIX: Can probabably find a way to speed this check, but this is reasonable proxy for the moment.
         % try to find KG* type 'best' lookahead value in (w,s) scale when
         % w0=0 and s=s0
     svec = s0*(1-(1:NUMCHECKS)/(6*NUMCHECKS));
@@ -47,7 +47,7 @@ if nargin==3
     else
         gamma = scale;
     end
-    svec = s0*(1-gamma*2.^(0:.1:3)); % check kg_x where x = 2.^(0:.05:5)
+    svec = s0*(1-gamma*2.^(-1:.1:3)); % check kg_x where x = 2.^(0:.05:5)
     sincrem = s0-svec(svec>0 & svec < s0) ;            % time elapse from scur to valid values in svec    
     dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment    
     for i=1:length(dincrem)           % check the lookaheads over that interval

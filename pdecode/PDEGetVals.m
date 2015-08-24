@@ -12,6 +12,10 @@ function [ Vvec, Bwsval, ENvec, PCSvec ] = PDEGetVals(cfSoln,wvec,sval)
 % samples (divide by beta to get right number of sample), PCSvec contains
 % the probability of correct selection, in expectation, given wvec, sval.
 %
+% For purposes here, continuation region is approximated by the upper and
+% lower boundary computed by the finite difference method, not the
+% asymptotic approximations
+%
 % it is presumed that cfSoln was loaded by PDESolnLoad(), and that function
 % in turn presumes that PDESolnCompute had been used to compute the PDE
 % solution
@@ -47,6 +51,8 @@ ENvec = [];
 % OUTPUT VALUE UPDATE IF POSSIBLE WITH SAVED FILES
 % Find which block to use to estimate function value at time sval
 if sval < firsts(1)  % sval was below the range for which data was originally computed
+    % therefore, use approximation to value function provided during
+    % computation time 
     Vvec = approxfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
     Bwsval = Vvec-stopfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
     % FIX: Might be able to do a smarter approximation by looking at
