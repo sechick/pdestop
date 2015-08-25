@@ -20,7 +20,7 @@ DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc'
 DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOfflineReward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 tauval = 907;
 StentScale = {'c', 200, 'sigma', 17538, 'discrate', 0, 'P', 2e6, 'tau', tauval };
-StentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 30, 'BaseFileName', sprintf('DelOffTau%d',tauval) };
+StentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'BaseFileName', sprintf('DelOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 
@@ -38,18 +38,17 @@ if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps
     UtilPlotDiagnostics(cfSoln);
 end
 
-%%% To TEST KGs stuff for case of no discounting
-if ~exist('fignum','var'), fignum = 20; end;
-s0 = 1/(scale.gamma*param.tEND);
+
+
 dw = .005;
 bigw = 15;
 wvec = (-bigw:bigw)*dw;
-[voikg, dsvec]=cfSoln.Header.PDEparam.approxvaluefunc(wvec,s0,scale,param);
-voikg = voikg - max(0,wvec);
+[voikg, dsvec]= cfSoln.Header.PDEparam.approxvaluefunc(wvec,s0,scale,param);
+voikg = scale.P * (voikg - max(0,wvec));
 fignum=fignum+1;figure(fignum);
 plot(wvec,voikg);
 fignum=fignum+1;figure(fignum);
-plot(wvec/scale.beta,1./(scale.gamma*dsvec));
+plot(wvec/scale.beta,scale.P./(scale.gamma*dsvec));
 
 m=0;         % value of retirement option in (y,t) space
 mu0=0;
@@ -71,7 +70,7 @@ DelayDiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', 
 DelayDiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOfflineReward, 'approxmethod', upperDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 tauval = 907;
 DStentScale = {'c', 200, 'sigma', 17538, 'discrate', 0.01, 'P', 2e6, 'tau', tauval };
-DStentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 30, 'BaseFileName', sprintf('DelDisOffTau%d',tauval) };
+DStentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'BaseFileName', sprintf('DelDisOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 
@@ -84,10 +83,24 @@ tic
 toc
 % Load in the data structures form those computations
 BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
-[rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
-if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
-    UtilPlotDiagnostics(cgSoln);
+[rval, cgdSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+if cgdSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    UtilPlotDiagnostics(cgdSoln);
 end
+
+
+%%% To TEST KGs stuff for case of no discounting
+if ~exist('fignum','var'), fignum = 20; end;
+s0 = 1/(scale.gamma*param.t0)
+sEND = 1/(scale.gamma*param.tEND)
+Icost = 0;
+[rval, cgSoln] = PDESolnLoad('Matfiles\CG',1,6);
+[ Vvec, Bwsval, ENvec, PCSvec ] = PDEGetVals(cgSoln,wvec - beta*Icost / scale.P + beta*scale.c / (scale.P * scale.discrate),s0) 
+[ Vvec, Bwsval, ENvec, PCSvec ] = PDEGetVals(cgdSoln,wvec - beta*Icost / scale.P + beta*scale.c / (scale.P * scale.discrate),s0) 
+Vvec = scale.P * Vvec / beta - scale.c/scale.discrate;
+muvec = wvec / beta;
+
+
 
 %%% To TEST KGs stuff for case of discounting
 if ~exist('fignum','var'), fignum = 20; end;

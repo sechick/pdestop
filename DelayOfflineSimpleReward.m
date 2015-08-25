@@ -25,9 +25,9 @@ end
     %dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment
     evivec = max(0, wvec); 
     if scale.discrate == 0
-        evitmp = -sincrem + sqrt(sincrem) * P * PsiNorm(-wvec/sqrt(sincrem));
+        evitmp = -sincrem + sqrt(sincrem) * PsiNorm(-wvec/sqrt(sincrem));
     else
-        evitmp = exp(-sincrem) * sqrt(sincrem) * P * PsiNorm(-wvec/sqrt(sincrem));
+        evitmp = exp(-sincrem) * sqrt(sincrem) * PsiNorm(-wvec/sqrt(sincrem));
     end
     evivec = max(evivec, evitmp);
     numvec = 0 * evivec;
