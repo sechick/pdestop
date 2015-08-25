@@ -27,6 +27,24 @@ if P == 1
         PDEScaleOut.kappainv = c * discrate^(-3/2) * sigma^(-1);    
     end
 else
+    % FIX: need to look at standardized problem and make sure that P<>1 is
+    % handled both here and delayoffinesimplereward both. Need also to
+    % handle case of I > 0 externally by tweaking the means, but that is
+    % separate from the standardization.
+    if discrate == 0 %
+        c = c/P;
+        PDEScaleOut.alpha = c^(1/3) * sigma^(-4/3);
+        PDEScaleOut.beta = c^(-1/3) * sigma^(-2/3);
+        PDEScaleOut.gamma = c^(2/3) * sigma^(-2/3);
+        PDEScaleOut.kappainv = 0;                   % this value is unused when disc rate is 0   
+    else % set up parameters for discounted case of C&G
+        sigma = sigma/P;
+%        c = c/P;
+        PDEScaleOut.alpha = discrate^(1/2) * sigma^(-1);
+        PDEScaleOut.beta = discrate^(-1/2) * sigma^(-1);
+        PDEScaleOut.gamma = discrate;
+        PDEScaleOut.kappainv = c * discrate^(-3/2) * sigma^(-1);    
+    end
     warning('FIX: need to confirm %s for P <> 1 and both c, discrate > 0',ST.name);
 end
 

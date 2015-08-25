@@ -65,7 +65,7 @@ gamma = PDEscale.gamma;
 %kappainv = PDEscale.kappainv;
 termreward = PDEparam.termrewardfunc;   % this function should return the reward for stopping at the specified time
 if PDEparam.finiteT
-    termreward = PDEparam.termrewardfunc;   % this function should return the reward for stopping at the specified time
+    rewardfunc = PDEparam.termrewardfunc;   % this function should return the reward for stopping at the specified time
 else
     rewardfunc = PDEparam.approxvaluefunc;  % this function should return the best approximation for the reward to go, or can be termreward if the original problem is a finite time horizon problem
 end
@@ -149,9 +149,9 @@ end
 % boundaries are roughly approximated using the asymptotic
 % approximations...
 THRESHSCALE = 100;          % set to be a bit bigger than the threshold value for 's' in the scaled approx for optimal boundary
-numchunks = 1 + ceil( log2( 1.1*(min(THRESHSCALE,s0)-sinit)/(Numds*ds) ) ); % guess as to how many iterations are needed to generate all the files
-spowvec = [0 4.^(0:(numchunks-1))]; % compute some vectors to say roughly how many times the initial 'ds' are the s-scale steps in the i=1,...,numchunks iterations
-wpowvec = [1 2.^(0:(numchunks-1))]; % compute some vectors to say roughly how many times the initial 'dw' are the w-scale steps in the i=1,...,numchunks iterations
+numchunks = 1 + ceil( log2( 1.1*max(1,min(THRESHSCALE,s0)-sinit)/(Numds*ds) ) ); % guess as to how many iterations are needed to generate all the files
+spowvec = [0 4.^(0:max(0,(numchunks-1)))]; % compute some vectors to say roughly how many times the initial 'ds' are the s-scale steps in the i=1,...,numchunks iterations
+wpowvec = [1 2.^(0:max(0,(numchunks-1)))]; % compute some vectors to say roughly how many times the initial 'dw' are the w-scale steps in the i=1,...,numchunks iterations
 smaxvec = sinit+Numds*ds*cumsum(spowvec); 
 % Right now we are only checking for figure fitting within boundary. Maybe
 % we should also be checking for number of grid points within boundary at

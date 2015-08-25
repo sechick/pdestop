@@ -33,7 +33,7 @@ rval = 1;
 for i=1:(scalearrayarrlen/2)
     if isfield(pdescale,scalearray{2*i-1}) %|| strcmp(scalearray{2*i-1},'mumax') ||  strcmp(scalearray{2*i-1},'mumin')
         pdescale.(scalearray{2*i-1}) = scalearray{2*i};
-    elseif isfield(pdeparam,paramarray{2*i-1})
+    elseif isfield(pdeparam,scalearray{2*i-1})
         warning(sprintf('attempt ignored to add field of param to scale structure: %s',char(scalearray{2*i-1}))); 
 %        pdescale.(scalearray{2*i-1}) = scalearray{2*i};
         rval = 0;
