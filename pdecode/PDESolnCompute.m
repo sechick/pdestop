@@ -185,11 +185,11 @@ hifrac = 0; lowfrac = 1; % These will be used in diagnostics to see if ceilfacto
 % Set up the initial conditions for the recursions
 scur = sinit
 % vectors for value function
-Cinitvec = rewardfunc(wvec,scur,PDEscale, PDEparam); % Approximation of value to go, given stopping at the discretized time sinit.
+[Cinitvec, sincrem] = rewardfunc(wvec,scur,PDEscale, PDEparam); % Approximation of value to go, given stopping at the discretized time sinit.
 Cin=Cinitvec;    % initialize terminal condition assuming immediate stopping.
 Cout=Cin;           % only to initialize
 % vectors for EN = expected number of samples
-ENCin = 0*Cinitvec; % a priori, assume 0 more samples in expectation at terminal time
+ENCin = sincrem; %0*Cinitvec; % a priori, assume 0 more samples in expectation at terminal time
 ENCout = ENCin; % a priori, assume 0 more samples in expectation at terminal time
 % structures for PCS
 EPCSCout = normcdf(abs(wvec)./sqrt(scur),0,1); % probability of correct selection if choice made at time scur
@@ -292,7 +292,8 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         else  % with discounting, it might be possible to have no lower stopping region, therefore we need to handle the update for Cout(1) in special way
             % we use a surrogate for the reward of doing dw below the stopping boundary... 
             Cout(2:(wvsize-1)) =  exp(- (1/scur-1/sout)) * ( Cin(1:(wvsize-2)) + Cin(2:(wvsize-1)) + Cin(3:wvsize)) / 3 ;
-            Cout(1) = exp(- (1/scur-1/sout)) * (rewardfunc(min(wvec)-dw,sout,PDEscale, PDEparam) + Cin(1) + Cin(2) ) / 3 ;              % following conditions in sure stopping at top and at bottom of vector
+%            Cout(1) = exp(- (1/scur-1/sout)) * (rewardfunc(min(wvec)-dw,sout,PDEscale, PDEparam) + Cin(1) + Cin(2) ) / 3 ;              % following conditions in sure stopping at top and at bottom of vector
+            Cout(1) = exp(- (1/scur-1/sout)) * (termreward(min(wvec)-dw,sout,PDEscale, PDEparam) + Cin(1) + Cin(2) ) / 3 ;              % following conditions in sure stopping at top and at bottom of vector
             Cout(wvsize) = Cinitvec(wvsize);
         end
         Cout=max(Cinitvec,Cout);

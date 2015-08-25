@@ -1,4 +1,4 @@
-function [ evivec ] = PDECFKGs( wvec, s0, scale )
+function [ evivec, dsvec ] = PDECFKGs( wvec, s0, scale )
 %PDECFKGs:  Solves something similar to the KG* in the (w, s) standardized
 %reverse time scale, for the stopping problem:
 %   max E[ - (1/S - 1/s0) + max(0, W_S) | w_{s_0} = wvec, s_0 ]
@@ -16,10 +16,15 @@ function [ evivec ] = PDECFKGs( wvec, s0, scale )
 % diffusion) and is a 'better' approximation than the old default value of
 % max(wvec,0). The philosophy is one of approximating the reward function
 % with a KG*-like test of multiple one-step lookahead.
-
+%
+% The value of the optimal one-step lookahead, in -s coordinates, is returned in
+% dsvec. This would convert to a lookahead of 1/(gamma ds) samples in t
+% coordinates
+%
 % At worst case, assume that one can stop immediately and get the best of 0
 % and the value of wvec. This is the usual terminal reward for stopping.
 evivec = max(wvec,0);   % lower bound on best you can do is to stop immediately
+dsvec = 0*evivec;
 
 if s0 <= 0 % need a valid value of s in order to do computations.
     warning('s0 should be strictly greater than 0');
@@ -33,6 +38,7 @@ elseif nargin < 3   % no parameter passed in for scale: try to flood
     dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment
     for i=1:length(dincrem)           % check the lookaheads over that interval
         evitmp = -(1/svec(i) - 1/s0) + sqrt(sincrem(i)) * PsiNorm(-wvec/sqrt(sincrem(i)));
+        dsvec(evitmp > evivec) = dincrem(i);
         evivec = max(evivec,evitmp);
     end
 else    
@@ -46,6 +52,7 @@ else
     dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment
     for i=1:length(dincrem)           % check the lookaheads over that interval
         evitmp = -(1./(svec(i)) - 1/s0) + sqrt(sincrem(i)) .* PsiNorm(-wvec/sqrt(sincrem(i)));
+        dsvec(evitmp > evivec) = dincrem(i);
         evivec = max(evivec,evitmp);
     end
     
@@ -54,16 +61,19 @@ else
     sfactor = (kgstarterm - 1 + sqrt(kgstarterm.^2 + 6*kgstarterm + 1)) / 4; % m-underbar from prop 4, frazier & powell, 2010
     sincrembase = max( gamma / (1 + gamma), sfactor ./ ( (1 + sfactor) * s0)); % this is the increment for kgstar for C&F. 
 	evitmp = -(1./(s0-sincrembase) - 1/s0) + sqrt(sincrembase) .* PsiNorm(-wvec./sqrt(sincrembase));
+	dsvec(evitmp > evivec) = sincrembase(evitmp > evivec);
     evivec = max(evivec,evitmp);
 
     sfactor = (kgstarterm - 1 + sqrt(kgstarterm.^2 + 14*kgstarterm + 1)) / 4; % m-underbar from prop 4, frazier & powell, 2010
     sincrembase = max( gamma / (1 + gamma), sfactor ./ ( (1 + sfactor) * s0)); % this is the increment for kgstar for C&F. 
 	evitmp = -(1./(s0-sincrembase) - 1/s0) + sqrt(sincrembase) .* PsiNorm(-wvec./sqrt(sincrembase));
+	dsvec(evitmp > evivec) = sincrembase(evitmp > evivec);
     evivec = max(evivec,evitmp);
     
     sfactor = (kgstarterm - 1 + sqrt(kgstarterm.^2 + 10*kgstarterm + 1)) / 4; % try middle of bounds, frazier & powell, 2010
     sincrembase = max( gamma / (1 + gamma), sfactor ./ ( (1 + sfactor) * s0)); % this is the increment for kgstar for C&F. 
 	evitmp = -(1./(s0-sincrembase) - 1/s0) + sqrt(sincrembase) .* PsiNorm(-wvec./sqrt(sincrembase));
+	dsvec(evitmp > evivec) = sincrembase(evitmp > evivec);
     evivec = max(evivec,evitmp);
 end
 

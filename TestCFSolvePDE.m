@@ -9,11 +9,15 @@
 %further t_0 = \sigma^2 / \sigma_0^2.
 
 % Set up generic functions for zero discounting,
-generictermreward=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+% these functions should return two vectors of the same size as wvec: the
+% first should be the expected reward at time s given wvec, the second
+% should be the expected number of samples to take additionally to achieve
+% it.
+generictermreward=@(wvec,s,p1,p2) PDEsimplereward(wvec);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
-CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc};
-CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc};
+CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
+CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
 CFparamvec = { 't0', .3, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'CF' };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
@@ -54,6 +58,19 @@ if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps
     UtilPlotDiagnostics(cfSoln);
 end
 
+%%% To TEST KGs stuff for case of no discounting
+if ~exist('fignum','var'), fignum = 20; end;
+s0 = 1/(scale.gamma*param.tEND);
+dw = .005;
+bigw = 15;
+wvec = (-bigw:bigw)*dw;
+[voikg, dsvec]=PDECFKGs(wvec,s0,scale);
+voikg = voikg - -max(0,wvec);
+fignum=fignum+1;figure(fignum);
+plot(wvec,voikg);
+fignum=fignum+1;figure(fignum);
+plot(wvec/scale.beta,1./(scale.gamma*dsvec));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
 %%     Create functions for use with positive discounting        %%  offline case
@@ -72,6 +89,20 @@ BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow
 if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     UtilPlotDiagnostics(cgSoln);
 end
+
+%%% To TEST KGs stuff for case of discounting
+if ~exist('fignum','var'), fignum = 20; end;
+s0 = 1/scale.gamma/param.tEND;
+dw = .01;
+bigw = 20;
+wvec = (-2*bigw:bigw)*dw;
+[voikg, dsvec]=PDECGKGs(wvec,s0,scale);
+voikg = voikg - -max(0,wvec);
+plot(wvec,voikg);
+fignum=fignum+1;figure(fignum);
+plot(wvec,voikg);
+fignum=fignum+1;figure(fignum);
+plot(wvec/scale.beta,1./(scale.gamma*dsvec));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
@@ -94,154 +125,30 @@ end
 
 
 
-%%% To TEST KGs stuff for case of no discounting
-figure(1000)
-s0 = 1/scale.gamma/param.tEND;
-dw = .005;
-bigw = 15;
-wvec = (-bigw:bigw)*dw;
-voikg=PDECFKGs(wvec,s0,scale)-max(0,wvec);
-plot(wvec,voikg);
-
-%%% To TEST KGs stuff for case of discounting
-figure(1001)
-s0 = 1/scale.gamma/param.tEND;
-dw = .01;
-bigw = 20;
-wvec = (-2*bigw:bigw)*dw;
-voikg=PDECGKGs(wvec,s0,scale)-max(0,wvec);
-plot(wvec,voikg);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OLD STUFF %%%%%%%%%%%%%%%%%%%%%%
 m=0;         % value of retirement option in (y,t) space
 mu0=0;
 
-
-% 2) Set up some computation specific parameters
-%   a) Some involve the terminal reward function for the stopping, which
-%   will in general be a function of the scaled posterior means in the
-%   variable(vector) wvec, when stopping at time s (valued in time s
-%   currency). Normally the parameters p1 and p2 are ignored, but they
-%   might be used to (optionally) pass PDEscale (p1) and PDEparam (p2) so as to
-%   compute the values. (will especially be useful for the ApproxValuefunc
-%   field).
-% ** Terminal reward functions: What is expected value of stopping at time
-% s with means in wvec
-% ** Approximate value to go function: if you don't have one for a new
-% terminal reward function you might have, then set this to be the same as
-% for the terminal reward function. if you have better, e.g. VOI of a fixed
-% length sampling policy, a la LL aka KGbeta, or KG*, then it can be used -
-% doing so will help to reduce the bias near time 1/(gamma*tEND) when
-% starting up the recursion process
-% ** An approximation to the optimal upper stopping boundary. This is a bit of a
-% chicken or the egg problem. Once the recursion has been run, you may have
-% an approximation - or you might have some analytical results such as from
-% the early Chernoff papers. If you have one, pass the function. This will be used 
-% for several purposes, including setting the value of dw correctly, and for saving space.
-% If you don't have it, you will need to play with setting
-%   - dw: bigger to run faster, smaller for more accuracy
-%   - NumDw: number of dw in the grid to keep
-upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
-upperDisc=@(s,p1,p2) CGApproxBoundW(s);
-Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case of P=1, c=1, discrate = 0.0002, for example
-upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
-%
-if false  % change this to evaluate to true if you want to try the 'ad hoc' computation which does not relay on
-    BaseFileName='WildWest'
-    param.termrewardfunc = @(wvec,s,p1,p2) max(wvec,0); % or some other function which is the expected value of stopping at a given time in (w,s) coordinates
-    param.approxvaluefunc = param.termrewardfunc ; % can use some other function, should be at least as big as termrewardfunction
-    param.approxmethod = upperguessNoClue;
-elseif scale.discrate == 0 % set up parameters for undiscounted case of C&F
-    % Set up file name for saving results
-    BaseFileName='CF';
-    param.termrewardfunc = CFTermRewardfunc;
-    param.approxvaluefunc = CFApproxValuefunc ;
-    param.approxmethod = upperNoDisc;
-else % set up parameters for discounted case of C&G
-    % Set up file name for saving results
-    BaseFileName='CG';
-    'SEC: need to validate discounted reward computation'
-    param.termrewardfunc = CGTermRewardfunc;
-    param.approxvaluefunc = CGApproxValuefunc;
-    param.approxmethod = upperDisc;
-end
-%   b) Some parameters to drive the computations, such as the range of values of n0 to compute, from t0 to tEND,
-%       where unknown mean W ~ Normal(mu0, sigma^2/n0), online says if
-%       there is online learning, etc.
-param.online = false;% true if online learning is active, false otherwise
-param.t0 = t0;      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-param.tEND = tEND;  % upper range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-param.retire = m;    % value of retirement option: ignored for discrate=0, taken to be alternative for discrate>0
-param.finiteT = false; % false or negative for infinite horizon problem, or a positive finite time horizon. 
-% Even if false, need to set tEND to something positve as a 'boundary' condition/time for stopping the PDE solution
-% when finitT is true, then the approxvaluefunc is ignored and termrewardfunc is used instead
-
-%   c) Some parameters which guide the computation of the solution and
-%   diagnostics during the computation.
-if scale.discrate > 0    % precision factor can be smaller for discounted rewards, as larger dw can be used
-    param.precfactor = 10.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
-else
-    param.precfactor = 30.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
-end
-param.DoPlot = true;       % true to turn on diagnostic plots
-
-scale
-param
-
-% Do the computations
-tic
-[rval, MAXFiles] = PDESolnCompute(BaseFileName, scale, param);
-toc
-
-% Load in the data structures form those computations
-flo = 1;
-fhi = MAXFiles;
-[rval, cfSoln] = PDESolnLoad(BaseFileName,flo,fhi);
-if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
-    UtilPlotDiagnostics(cfSoln);
-end
-
-APrioriRegret=(scale.sigma/sqrt(t0)) * PsiNorm( abs(mu0-m) / (scale.sigma/sqrt(t0)))
-tmppp=PDEGetVals(cfSoln,(mu0-m)*beta,1/(t0*gamma))/beta
+APrioriRegret=(scale.sigma/sqrt(param.t0)) * PsiNorm( abs(mu0-m) / (scale.sigma/sqrt(param.t0)))
+tmppp=PDEGetVals(cfSoln,(mu0-m)*scale.beta,1/(param.t0*scale.gamma))/scale.beta
 APrioriRegret-tmppp
-
-
-% try to check smoothness of value function in these files from one 'block'
-% to the next, as a sanity check for numerical stability and the impact of
-% the 'ripple' effect
-s0 = 1/(gamma * t0)
-w0 = mu0*beta
-for j=1:(MAXFiles-1)
-    j
-    svaltotest=cfSoln.Header.lasts(j)
-    vala = interp2(cfSoln.Data(j).svec,cfSoln.Data(j).wvec,cfSoln.Data(j).Bwsmatrix,svaltotest,cfSoln.Data(j).wvec)/beta; 
-    valb = interp2(cfSoln.Data(j+1).svec,cfSoln.Data(j+1).wvec,cfSoln.Data(j+1).Bwsmatrix,svaltotest,cfSoln.Data(j).wvec)/beta; 
-    figure(1111+j);
-    plot(cfSoln.Data(j).wvec,vala,'-r',cfSoln.Data(j).wvec,valb,'-.k')
-    legend('block j','block j+1');
-    figure(1111+MAXFiles+j);
-    plot(cfSoln.Data(j).wvec,(vala-valb)./vala,'-',cfSoln.Data(j).upvec(end),0,'x',cfSoln.Data(j).downvec(end),0,'x')
-    maxrelerr=max(abs(vala-valb)./vala)
-    maxabserr=max(abs(vala-valb))
-    legend('relative error: block j - block j+1');
- %   pause;
-end
-    
 
 % start to reconstruct the values for plotting....
 sbvec = cfSoln.Computed.accumsvec;
-up = cfSoln.Computed.accumuppper;
+up = cfSoln.Computed.accumupper;
 lo = cfSoln.Computed.accumlower;
 findex = cfSoln.Computed.fileindx;
 
 if param.DoPlot
+    if ~exist('fignum','var'), fignum = 20; end;
     if isa(cfSoln.Header.PDEparam.approxmethod,  'function_handle')
-    %    dt = 1/gamma/s0 - 1/gamma/(s0+ds)
+    %    dt = 1/scale.gamma/s0 - 1/scale.gamma/(s0+ds)
     %    dmu=dw/beta
         mysmallfontsize = 14;
         myfontsize = 16;
-        figure(17)
+        fignum=fignum+1;figure(fignum);
         tstcurv=cfSoln.Header.PDEparam.approxmethod(sbvec);
         plot(sbvec,up,'--',sbvec,tstcurv,'-.');set(gca,'FontSize',mysmallfontsize);
         legend('From PDE','Quick Approx.','Location','SouthEast')
@@ -254,8 +161,8 @@ if param.DoPlot
         numbetas=length(betastepvec);
         betamatrix=zeros(numbetas,length(up));
 
-        figure(18)
-        loglog(1/gamma./sbvec,up/beta,'--',1/gamma./sbvec,tstcurv/beta,'-.');set(gca,'FontSize',mysmallfontsize);
+        fignum=fignum+1;figure(fignum);
+        loglog(1/scale.gamma./sbvec,up/scale.beta,'--',1/scale.gamma./sbvec,tstcurv/scale.beta,'-.');set(gca,'FontSize',mysmallfontsize);
         legend('From PDE','Quick Approx.','Location','NorthEast')
         xlabel('Effective number of replications, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         %title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
@@ -265,7 +172,7 @@ if param.DoPlot
 end
 
 
-    mwig = param.retire*beta;
+    mwig = param.retire*scale.beta;
     
     % GET INDEX INTO RIGHT STUCTURE BASED ON TIME
     [a, b] = min(s0 > sbvec);
@@ -273,7 +180,7 @@ end
     wvec = cfSoln.Data(ind).wvec;
     svec = cfSoln.Data(ind).svec;
     Bwsmatrix = cfSoln.Data(ind).Bwsmatrix;
-    Bmu0t0=mwig/beta+interp2(svec,wvec,Bwsmatrix,s0,w0)/beta
+    Bmu0t0=mwig/scale.beta+interp2(svec,wvec,Bwsmatrix,s0,w0)/scale.beta
     Bw0s0=mwig + interp2(svec,wvec,Bwsmatrix,s0,w0)
     % This is the VOI info - need to add in the stopping to get the full
     % value function
@@ -296,75 +203,54 @@ mysmallfontsize=14
 points = 144*3 %spacing between labels on contours - made so that only one label appears per line
 
 
-%[ta tb tc]=fminbnd('Bztauapproxc',0,1/gamma/n0base,optimset('TolFun',beta/scale.sigma,'MaxIter',10^4),0,1/gamma/n0base);       % FIXED VERSION
-[ta tb tc]=fminbnd('Bztauapproxc',0,s0,optimset('TolFun',beta/scale.sigma,'MaxIter',10^4),0,s0);       % FIXED VERSION
--tb/beta - c/gamma
-sig0*PsiNorm(-mu0/sig0)
+%[ta tb tc]=fminbnd('Bztauapproxc',0,1/scale.gamma/n0base,optimset('TolFun',scale.beta/scale.sigma,'MaxIter',10^4),0,1/scale.gamma/n0base);       % FIXED VERSION
+[ta tb tc]=fminbnd('Bztauapproxc',0,s0,optimset('TolFun',scale.beta/scale.sigma,'MaxIter',10^4),0,s0);       % FIXED VERSION
+-tb/scale.beta - scale.c/scale.gamma
+sig0 = scale.sigma / sqrt(param.t0)
+sig0*PsiNorm(-mu0/sig0) - (-tb/scale.beta - scale.c/scale.gamma)
 
 %ds
-%dt = 1/gamma/s0 - 1/gamma/(s0+ds)
+%dt = 1/scale.gamma/s0 - 1/scale.gamma/(s0+ds)
 %dw
-%dmu=dw/beta
+%dmu=dw/scale.beta
 
-%Bmu0t0=m+interp2(svec,wvec,Bwsmatrix,s0,w0)/beta
-%Bw0s0=beta*m + interp2(svec,wvec,Bwsmatrix,s0,w0)
+%Bmu0t0=m+interp2(svec,wvec,Bwsmatrix,s0,w0)/scale.beta
+%Bw0s0=scale.beta*m + interp2(svec,wvec,Bwsmatrix,s0,w0)
 
 % CHUNK5: Generate some plots
 % Convert from (w,s) coordinates to (y/t, t) coordinates (NOT (y,t)
 % coordinates!!!!)
 
-% REASSEMBLE THE BOUNDARY FROM THE VARIOUS FILES
-for ijk=1:MAXFiles
-%   reload data
-    mymat = strcat(strcat(BaseFileName,int2str(ijk)),'.mat');
-%    save(mymat,'svec','wvec','Bwsmatrix','upvec','up1');
-    S=load(mymat);
-    if ijk==1
-        sbvec = S.svec;
-        wvec = S.wvec;
-        Bws = S.Bwsmatrix;
-        up = S.upvec;
-        up1 = S.up1;
-    else
-        sbvec = [sbvec S.svec];
-        up = [up S.upvec];
-        up1 = [up1 S.up1];
-    end
-end
-figure(17)
-tstcurv=ApproxBoundW(sbvec);
-plot(sbvec,up,'--',sbvec,tstcurv,'-.');set(gca,'FontSize',mysmallfontsize);
-legend('From PDE','Quick Approx.','Location','SouthEast')
-xlabel('Reverse time scale,  s=1/(\gamma t)','FontSize',myfontsize,'FontName','Times'); ylabel('Rescaled mean, w','FontSize',myfontsize,'FontName','Times')
-%title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
-mytitle = strcat('BoundaryWS','.eps');
-print('-deps',mytitle);	
-
 betastepvec=[1 5 10 20 50 100 200 500 1000];
 numbetas=length(betastepvec);
 betamatrix=zeros(numbetas,length(up));
 
-figure(18)
-loglog(1/gamma./sbvec,up/beta,'--',1/gamma./sbvec,tstcurv/beta,'-.');set(gca,'FontSize',mysmallfontsize);
+if ~exist('fignum','var'), fignum = 20; end;
+fignum=fignum+1;figure(fignum);
+tstcurv=cfSoln.Header.PDEparam.approxmethod(sbvec);
+loglog(1/scale.gamma./sbvec,up/scale.beta,'--',1/scale.gamma./sbvec,tstcurv/scale.beta,'-.');set(gca,'FontSize',mysmallfontsize);
 legend('From PDE','Quick Approx.','Location','NorthEast')
 xlabel('Effective number of replications, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
 %title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
 mytitle = strcat('BoundaryYT','.eps');
 print('-deps',mytitle);	
 
-figure(19)
-tstcurv=ApproxBoundW(sbvec);
-plot(up./tstcurv)
+if ~exist('fignum','var'), fignum = 20; end;
+fignum=fignum+1;figure(fignum);
+tstcurv= cfSoln.Header.PDEparam.approxmethod(sbvec);
+xlabel('s coord');
+title('ratio of upper bound from grid divided by approx to bound');
+plot(sbvec,up./tstcurv)
 
 % Try to get one-step estimate of boundary
 for j=1:numbetas;
-    ybndup1step = up/beta; %initialize vector
-    tvec = 1/gamma./sbvec;
+    ybndup1step = up/scale.beta; %initialize vector
+    tvec = 1/scale.gamma./sbvec;
     ytinit = ybndup1step(length(ybndup1step))*tvec(length(ybndup1step));
     betamatrix(j,:) = ytinit;
     nrepslookahead=betastepvec(j)
     for i=length(ybndup1step):-1:1
-        [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
+        [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*scale.c);
         ybndup1step(i)=ytinit;
         ytinit=ytinit*0.99;
     end
@@ -372,73 +258,25 @@ for j=1:numbetas;
 end
 kgstar=max(betamatrix);
 
-figure(19)
-%loglog(1/gamma./sbvec,up/beta,'--',1/gamma./sbvec,tstcurv/beta,'-.',tvec,ybndup1step./tvec,':o',tvec,ybndupNstep./tvec,'-x')
+if ~exist('fignum','var'), fignum = 20; end;
+fignum=fignum+1;figure(fignum);
+%loglog(1/scale.gamma./sbvec,up/scale.beta,'--',1/scale.gamma./sbvec,tstcurv/scale.beta,'-.',tvec,ybndup1step./tvec,':o',tvec,ybndupNstep./tvec,'-x')
 %legend('From PDE','Quick Approx.','One-step lookahead','N-step lookahead','Location','NorthEast')
-loglog(1/gamma./sbvec,up/beta,'-',1/gamma./sbvec,kgstar./tvec,'--',tvec,betamatrix(1,:)./tvec,':',tvec,betamatrix(3,:)./tvec,'.',tvec,betamatrix(6,:)./tvec,'-.')
-legend('PDE','KG_*','KG_1 = 1-step lookahead','KG_{10} = 10-step lookahead','KG_{100} =100-step lookahead','Location','SouthWest')
-%loglog(1/gamma./sbvec,tstcurv/beta,'-.',tvec,ybndup1step./tvec,':')
+tstcurv=cfSoln.Header.PDEparam.approxmethod(sbvec);
+loglog(1/scale.gamma./sbvec,tstcurv/scale.beta,'-',1/scale.gamma./sbvec,up/scale.beta,'-',1/scale.gamma./sbvec,kgstar./tvec,'--',tvec,betamatrix(1,:)./tvec,':',tvec,betamatrix(3,:)./tvec,'.',tvec,betamatrix(6,:)./tvec,'-.')
+legend('Quick approx','PDE','KG_*','KG_1 = 1-step lookahead','KG_{10} = 10-step lookahead','KG_{100} =100-step lookahead','Location','SouthWest')
+%loglog(1/scale.gamma./sbvec,tstcurv/scale.beta,'-.',tvec,ybndup1step./tvec,':')
 %legend('PDE or Quick Approx.','One-step lookahead','Location','NorthEast')
 xlabel('Effective number of replications, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
 %title('Stopping boundary','FontSize',myfontsize,'FontName','Times')
 %title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
 mytitle = strcat('BoundaryYTGreedy','.eps');set(gca,'FontSize',mysmallfontsize);
 tmp=axis;
-tmp(1) = max(1,tmp(1));
-tmp(2) = 10^4; max(1/gamma./sbvec);
-tmp(3)= 10;
-tmp(4) = 5*10^5; 1.02*max(up/beta);
+%tmp(1) = max(1,tmp(1));
+tmp(1) = 0.9*min(1/scale.gamma./sbvec);
+tmp(2) = 1.1*max(1/scale.gamma./sbvec);
+%tmp(3)= 10;
+%tmp(4) = 1.02*max(up/scale.beta);
 axis(tmp);
-print('-deps',mytitle);	
-
-
-
-% Try to get one-step estimate of boundary
-ybndup1step = up/beta; %initialize vector
-tvec = 1/gamma./sbvec;
-ytinit = ybndup1step(length(ybndup1step))*tvec(length(ybndup1step));
-nrepslookahead=1;
-for i=length(ybndup1step):-1:1
-    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
-    ybndup1step(i)=ytinit;
-    ytinit=ytinit*0.99;
-end
-
-% Try to get N-step estimate of boundary
-ybndupNstep = ybndup1step; %initialize vector
-ytinit = ybndupNstep(length(ybndupNstep))*tvec(length(ybndupNstep)) * 1.01;
-nrepslookahead=10;
-for i=length(ybndupNstep):-1:1
-    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
-    ybndupNstep(i)=ytinit;
-    ytinit=ytinit*1.01;
-end
-
-% Try to get another N-step estimate of boundary
-ybndupNbisstep = ybndup1step; %initialize vector
-ytinit = ybndupNstep(length(ybndupNstep))*tvec(length(ybndupNstep)) * 1.01;
-nrepslookahead=100;
-for i=length(ybndupNstep):-1:1
-    [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*c);
-    ybndupNbisstep(i)=ytinit;
-    ytinit=ytinit*1.01;
-end
-
-
-tmpvec=ybndupNstep-ybndup1step;
-max(tmpvec)
-min(tmpvec)
-
-figure(19)
-%loglog(1/gamma./sbvec,up/beta,'--',1/gamma./sbvec,tstcurv/beta,'-.',tvec,ybndup1step./tvec,':o',tvec,ybndupNstep./tvec,'-x')
-%legend('From PDE','Quick Approx.','One-step lookahead','N-step lookahead','Location','NorthEast')
-loglog(1/gamma./sbvec,up/beta,'-',tvec,ybndup1step./tvec,':',tvec,ybndupNstep./tvec,'-.',tvec,ybndupNbisstep./tvec,'--')
-legend('PDE','\beta=  1-step lookahead','\beta= 10-step lookahead','\beta=100-step lookahead','Location','NorthEast')
-%loglog(1/gamma./sbvec,tstcurv/beta,'-.',tvec,ybndup1step./tvec,':')
-%legend('PDE or Quick Approx.','One-step lookahead','Location','NorthEast')
-xlabel('Effective number of replications, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
-%title('Stopping boundary','FontSize',myfontsize,'FontName','Times')
-%title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
-mytitle = strcat('BoundaryYTGreedy','.eps');
 print('-deps',mytitle);	
 

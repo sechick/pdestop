@@ -1,4 +1,4 @@
-function [ evivec ] = PDECGKGs( wvec, s0, scale )
+function [ evivec, dsvec ] = PDECGKGs( wvec, s0, scale )
 %PDECFKGs:  Solves something similar to the KG* in the (w, s) standardized
 %reverse time scale, for the stopping problem:
 %   max E[ exp(- (1/S - 1/s0)) W_S | w_{s_0} = wvec, s_0 ]
@@ -17,11 +17,16 @@ function [ evivec ] = PDECGKGs( wvec, s0, scale )
 % diffusion) and is a 'better' approximation than the old default value of
 % max(wvec,0). The philosophy is one of approximating the reward function
 % with a KG*-like test of multiple one-step lookahead.
-
+%
+% The value of the optimal one-step lookahead, in -s coordinates, is returned in
+% dsvec. This would convert to a lookahead of 1/(gamma ds) samples in t
+% coordinates
+%
 % At worst case, assume that one can stop immediately and get the best of 0
 % and the value of wvec. This is the usual terminal reward for stopping.
 
 evivec = max(wvec,0);   % lower bound on best you can do is to stop immediately
+dsvec = 0*evivec;
 
 if s0 <= 0 % need a valid value of s in order to do computations.
     warning('s0 should be strictly greater than 0');
@@ -36,8 +41,11 @@ end
     sincrem = s0-svec(svec>0 & svec < s0);             % time elapse from scur to valid values in svec    
     dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment
     for i=1:length(dincrem)           % check the lookaheads over that interval
-        erew = (max(0,wvec+dincrem(i)) + max(0,wvec) + max(0,wvec-dincrem(i)))/3; % reward making decision in a bit of time
-        evitmp = exp(1/s0 - 1/svec(i)) * erew;
+        %erew = (max(0,wvec+dincrem(i)) + max(0,wvec) + max(0,wvec-dincrem(i)))/3; % reward making decision in a bit of time
+        %evitmp = exp(1/s0 - 1/svec(i)) * erew; % this is in spirit of
+        %discrete lookahead. Psinorm is more of an exact lookahead
+        evitmp = exp(1/s0 - 1/svec(i)) * sqrt(sincrem(i)) * PsiNorm(-wvec/sqrt(sincrem(i)));
+        dsvec(evitmp > evivec) = dincrem(i);
         evivec = max(evivec,evitmp);
     end
 %else  % third argument was passed - try to pick out scaling parameter gamma from it then compute KG*
@@ -51,8 +59,10 @@ if nargin==3
     sincrem = s0-svec(svec>0 & svec < s0) ;            % time elapse from scur to valid values in svec    
     dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment    
     for i=1:length(dincrem)           % check the lookaheads over that interval
-        erew = (max(0,wvec+dincrem(i)) + max(0,wvec) + max(0,wvec-dincrem(i)))/3; % reward making decision in a bit of time
-        evitmp = exp(1/s0 - 1/svec(i)) * erew;
+%        erew = (max(0,wvec+dincrem(i)) + max(0,wvec) + max(0,wvec-dincrem(i)))/3; % reward making decision in a bit of time
+%        evitmp = exp(1/s0 - 1/svec(i)) * erew;
+        evitmp = exp(1/s0 - 1/svec(i)) * sqrt(sincrem(i)) * PsiNorm(-wvec/sqrt(sincrem(i)));
+        dsvec(evitmp > evivec) = dincrem(i);
         evivec = max(evivec,evitmp);
     end
     % don't yet have bounds for KG* approx for discounted case which would
