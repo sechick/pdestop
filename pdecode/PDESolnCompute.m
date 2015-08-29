@@ -363,7 +363,8 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         hifrac
         lowfrac
         %        figure(180+ijk)
-        figure(180)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
         plot(wvec(:),Cinitvec(:),'-.',wvec(:),Cin(:),'--');set(gca,'FontSize',mysmallfontsize);
         hold on; 
@@ -375,7 +376,8 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         mytitle = strcat(figdir,fName,'FigVWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        figure(300)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
         semilogy(wvec(:),Cinitvec(:),'-.',wvec(:),Cin(:),'--');set(gca,'FontSize',mysmallfontsize);
         %plot(wvec(:),Cinitvec(:),'-.',wvec(:),Cin(:),'--');set(gca,'FontSize',mysmallfontsize);

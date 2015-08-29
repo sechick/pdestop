@@ -16,10 +16,10 @@
 generictermreward=@(wvec,s,p1,p2) PDEsimplereward(wvec);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 CFApproxValuefunc=@(wvec,s,p1,p2) PDECFKGs(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
-CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
-CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
-CFparamvec = { 't0', .3, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'CF' };
+CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
+CFscalevec = {'c', 2, 'sigma', 10e5, 'discrate', 0, 'P', 1};
+CFparamvec = { 't0', .3, 'tEND', 20000, 'precfactor', 10, 'BaseFileName', 'CF' };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
 %figdir Figure\, matdir Matfiles\ UnkVariance 0
 
@@ -29,7 +29,7 @@ upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
-CGparamvec = { 't0', 0.5, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'CG' };
+CGparamvec = { 't0', 0.5, 'tEND', 20000, 'precfactor', 10, 'BaseFileName', 'CG' };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
@@ -61,15 +61,15 @@ end
 %%% To TEST KGs stuff for case of no discounting
 if ~exist('fignum','var'), fignum = 20; end;
 s0 = 1/(scale.gamma*param.tEND);
-dw = .005;
-bigw = 15;
+dw = .0005;
+bigw = 40;
 wvec = (-bigw:bigw)*dw;
 [voikg, dsvec]=PDECFKGs(wvec,s0,scale);
-voikg = voikg - -max(0,wvec);
+voikg = voikg - max(0,wvec);
 fignum=fignum+1;figure(fignum);
 plot(wvec,voikg);
 fignum=fignum+1;figure(fignum);
-plot(wvec/scale.beta,1./(scale.gamma*dsvec));
+plot(wvec/scale.beta,1./(scale.beta*dsvec));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
@@ -97,12 +97,25 @@ dw = .01;
 bigw = 20;
 wvec = (-2*bigw:bigw)*dw;
 [voikg, dsvec]=PDECGKGs(wvec,s0,scale);
-voikg = voikg - -max(0,wvec);
+voikg = voikg - max(0,wvec);
 plot(wvec,voikg);
 fignum=fignum+1;figure(fignum);
 plot(wvec,voikg);
 fignum=fignum+1;figure(fignum);
-plot(wvec/scale.beta,1./(scale.gamma*dsvec));
+%plot(wvec/scale.beta,1./(scale.gamma*dsvec));
+plot(wvec/scale.beta,1./(scale.gamma*(s0-dsvec)) - 1./(scale.gamma*s0));
+
+
+t0 = param.t0
+s0 = 1/scale.gamma/t0
+dw = .1;
+bigw = 10;
+wvec = (-2*bigw:bigw)*dw/scale.beta;
+lookahead = 1;
+kgfrac = wvec.^2 * t0 / scale.sigma^2
+kgs = max( 0, (t0/4) * (kgfrac - 1 + sqrt(kgfrac.^2 + 6*kgfrac + 1)))
+-scale.c*lookahead + 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
@@ -130,6 +143,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OLD STUFF %%%%%%%%%%%%%%%%%%%%%%
 m=0;         % value of retirement option in (y,t) space
 mu0=0;
+
+wvec
+
+
+
 
 APrioriRegret=(scale.sigma/sqrt(param.t0)) * PsiNorm( abs(mu0-m) / (scale.sigma/sqrt(param.t0)))
 tmppp=PDEGetVals(cfSoln,(mu0-m)*scale.beta,1/(param.t0*scale.gamma))/scale.beta

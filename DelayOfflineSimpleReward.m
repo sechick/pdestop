@@ -1,5 +1,5 @@
 function [ evivec, numvec ] = DelayOfflineSimpleReward( wvec, s0, scale, param )
-%DelayNodiscSimplereward:  find standardized reward in (w, s) coordinates
+%DelayOfflineSimpleReward:  find standardized reward in (w, s) coordinates
 %when there is a delayed observation .
 
     if isfield(param,'tau')
@@ -25,9 +25,9 @@ end
     %dincrem = sqrt(3*sincrem/2);    % implied reward from diffusion over that increment
     evivec = max(0, wvec); 
     if scale.discrate == 0
-        evitmp = -sincrem + sqrt(sincrem) * PsiNorm(-wvec/sqrt(sincrem));
+        evitmp = -(1/(s0-sincrem) -1/s0) + sqrt(sincrem) * PsiNorm(-wvec/sqrt(sincrem));
     else
-        evitmp = exp(-sincrem) * sqrt(sincrem) * PsiNorm(-wvec/sqrt(sincrem));
+        evitmp = exp(-(1/(s0-sincrem) -1/s0)) * sqrt(sincrem) * PsiNorm(-wvec/sqrt(sincrem));
     end
     evivec = max(evivec, evitmp);
     numvec = 0 * evivec;

@@ -60,7 +60,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         
         % First, plot a contour plot of the benefit (above 0) of continuing, plus a
         % boundary of the upper and lower continuation set
-        figure(20+ijk)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
         [C, h]=contour(svec,wvec,Bwsmatrix); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
         hold on
@@ -76,7 +77,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         mytitle = strcat(figdir,fName,'FigContWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end
 
-        figure(60+ijk)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
         [C, h]=contour(1/gamma./svec,wvec/beta,Bwsmatrix/beta); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
         hold on
@@ -87,7 +89,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         mytitle = strcat(figdir,fName,'FigContYT',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        figure(100+ijk)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
         plot(svec,up1,'-.',svec,upvec,'--');set(gca,'FontSize',mysmallfontsize);
         hold on
@@ -105,7 +108,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         mytitle = strcat(figdir,fName,'FigContCPbias',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        figure(140+ijk)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
         plot(svec,-downvec,'-.',svec,upvec,'--');set(gca,'FontSize',mysmallfontsize);
         hold on
@@ -122,7 +126,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         mytitle = strcat(figdir,fName,'FigDiffUpDownWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        figure(220+ijk)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
 %        [C, h]=contour(1/gamma./svec,wvec/beta,ENwsmatrix/gamma); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
         plot(wvec(:)/beta,ENwsmatrix(:,end)/gamma,'-');set(gca,'FontSize',mysmallfontsize);
@@ -137,7 +142,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
         mytitle = strcat(figdir,fName,'FigENYT',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        figure(260+ijk)
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
         hold off
 %        [C, h]=contour(1/gamma./svec,wvec/beta,1-EPCSwsmatrix); clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
         plot(wvec(:),1-EPCSwsmatrix(:,end),'-',wvec(:),1 - normcdf(abs(wvec(:))/sqrt(cfSoln.Header.lasts(ijk)),0,1),'-.');set(gca,'FontSize',mysmallfontsize);
@@ -158,7 +164,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
             svaltotest=cfSoln.Header.lasts(ijk)
             vala = interp2(cfSoln.Data(ijk).svec,cfSoln.Data(ijk).wvec,cfSoln.Data(ijk).Bwsmatrix,svaltotest,cfSoln.Data(ijk).wvec)/beta; 
             valb = interp2(cfSoln.Data(ijk+1).svec,cfSoln.Data(ijk+1).wvec,cfSoln.Data(ijk+1).Bwsmatrix,svaltotest,cfSoln.Data(ijk).wvec)/beta; 
-            figure(1100+ijk);
+            if ~exist('fignum','var'), fignum = 20; end;
+            fignum=fignum+1;figure(fignum);
             plot(cfSoln.Data(ijk).wvec,vala,'-r',cfSoln.Data(ijk).wvec,valb,'-.k',cfSoln.Data(ijk).up1(end),0,'x',cfSoln.Data(ijk).down1(end),0,'x')
             title(sprintf('Solution in two blocks at s=%f',svaltotest));
             legend('block j','block j+1');
@@ -166,7 +173,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
             mytitle = strcat(figdir,fName,'RippleCheckAbs',int2str(ijk),'.eps');
             if figsave print('-deps',mytitle); end	
 
-            figure(1150+ijk);
+            if ~exist('fignum','var'), fignum = 20; end;
+            fignum=fignum+1;figure(fignum);
             plot(cfSoln.Data(ijk).wvec,(vala-valb)./vala,'-',cfSoln.Data(ijk).up1(end),0,'x',cfSoln.Data(ijk).down1(end),0,'x')
             maxrelerr=max(abs(vala-valb)./vala)
             maxabserr=max(abs(vala-valb))
@@ -184,7 +192,8 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
     
     % summary statistics computed from the file
     cfSoln.Computed
-    figure(1400+ijk)
+    if ~exist('fignum','var'), fignum = 20; end;
+    fignum=fignum+1;figure(fignum);
     hold off
     plot(accumsvec,-accumlower,'-.',accumsvec,accumupper,'--');set(gca,'FontSize',mysmallfontsize);
     hold on
