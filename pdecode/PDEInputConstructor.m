@@ -49,8 +49,8 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
     pdeparam.termrewardfunc = @(wvec,s,p1,p2)max(wvec,0); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
     %termrewardfunc: @(wvec,s,p1,p2)max(wvec,0)
     pdeparam.approxvaluefunc = @(wvec,s,p1,p2)max(wvec,0); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
-    %approxvaluefunc: @(wvec,s,p1,p2)PDECFKGs(wvec,s,p1)
-    %approxvaluefunc: @(wvec,s,p1,p2)PDECGKGs(wvec,s,p1)
+    %approxvaluefunc: @(wvec,s,p1,p2)PDECFApproxValue(wvec,s,p1)
+    %approxvaluefunc: @(wvec,s,p1,p2)PDECGApproxValue(wvec,s,p1)
     pdeparam.approxmethod = @(s,p1,p2)CFApproxBoundW(s); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
     %approxmethod: @(s,p1,p2)CGApproxBoundW(s)
     %approxmethod: [ .06 1500] % for CF, for example, vector gives the
@@ -96,11 +96,18 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
     if ~isfield(pdeparam2,'BaseFileName') % if no file name was passed, then come up with a default name based on discount rate value
         if pdescale2.discrate == 0.0  % continuous time discount rate per sample, e.g. 0.0 or .00001
             pdeparam2.BaseFileName = 'CF'; % base text for file names for output
+% Should fix: get approxvaluefunc to take correct default if not finiteT
+% and not passed in inputmodifier function
+%            if ~pdeparam2.finiteT
+%            end
+    %approxvaluefunc: @(wvec,s,p1,p2)PDECFApproxValue(wvec,s,p1)
+    %approxvaluefunc: @(wvec,s,p1,p2)PDECGApproxValue(wvec,s,p1)
         else
             pdeparam2.BaseFileName = 'CG'; % base text for file names for output
         end
     end
-
+    pdeparam.approxvaluefunc = @(wvec,s,p1,p2)max(wvec,0); % by default, reward is max(posterior mea, 0), will be scaled by pdescale.P
+    
     pdescale = pdescale2;
     pdeparam = pdeparam2;
 % COMPUTED PARAMETERS: If more are put here, please fix the code to insure

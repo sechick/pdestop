@@ -108,7 +108,7 @@ s0 = 1/scale.gamma/param.tEND;
 dw = .01;
 bigw = 20;
 wvec = (-2*bigw:bigw)*dw;
-[voikg, dsvec]=PDECGKGs(wvec,s0,scale);
+[voikg, dsvec]=PDECGApproxValue(wvec,s0,scale);
 voikg = voikg - -max(0,wvec);
 plot(wvec,voikg);
 fignum=fignum+1;figure(fignum);
