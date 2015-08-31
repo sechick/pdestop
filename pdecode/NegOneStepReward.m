@@ -34,8 +34,8 @@ if t > t0
     sampcosts
     sampcosts2/scale.gamma
 else
-    B = mu0 - (t0 - t); % return B0 with zero samples, minus a penalty for t < t0
-    B2 = w0 - (1/s - 1/s0)*scale.beta;
+    B = mu0 - scale.c*(t0 - t); % return B0 with zero samples, minus a penalty for t < t0
+    B2 = w0 - (1/s - 1/s0);
 end
 B
 B2/scale.beta

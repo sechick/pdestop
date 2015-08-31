@@ -76,33 +76,6 @@ else
 %        figure(1002); plot(wvec,evivec,'k',wvec,evitmp,'b'); hold on;
 %        figure(1003); plot(wvec,costvec); hold on;
     end
-    
-    % now check bounds from Frazier and Powell 2010
-    evivec2 = max(wvec,0);   % lower bound on best you can do is to stop immediately
-    dsvec2 = 0*evivec2;   % lower bound on best you can do is to stop immediately
-    NUMKGCHECKS = 12;
-    CHECKVEC=6:(4/NUMKGCHECKS):10;
-    kgstarterm = wvec.^2 / s0; 
-%    figure(10001); hold off; figure(10002); hold off;
-    for i=1:length(CHECKVEC)
-        sfactor = ( 1 /(4*gamma*s0)  ) * (kgstarterm - 1 + sqrt(kgstarterm.^2 + CHECKVEC(i)*kgstarterm + 1)); % m-underbar from prop 4, frazier & powell, 2010
-        sincrembase = s0 * max( gamma*s0 / (1 + gamma*s0) , sfactor*gamma*s0 ./ ( 1 + sfactor*gamma*s0) ); % this is the increment for kgstar for C&F. 
-        evitmp = -(1./(s0-sincrembase) - 1/s0) + sqrt(sincrembase) .* PsiNorm(-wvec./sqrt(sincrembase));
-        dsvec2(evitmp > evivec2) = sincrembase(evitmp > evivec2);%(evitmp > evivec2);
-        evivec2 = max(evivec2,evitmp);
-%        figure(10001); plot(wvec,sincrembase); hold on; plot(wvec,s0);
-%        figure(10002); plot(wvec,evivec2,'k',wvec,evitmp,'b'); hold on;
-%        figure(10003); plot(wvec,costvec); hold on;    
-    end
-    evivec-evivec2;
-%    figure(2000)
-%    plot(wvec,evivec,'-',wvec,evivec2,'--')
-%    figure(2001)
-%    plot(wvec,dsvec,'-',wvec,dsvec2,'--')
-
-    evivec = max(evivec,evivec2);
-    dsvec = max(dsvec,dsvec2);
-
 end
 
 

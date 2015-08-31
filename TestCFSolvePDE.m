@@ -94,16 +94,31 @@ end
 if ~exist('fignum','var'), fignum = 20; end;
 s0 = 1/scale.gamma/param.tEND;
 dw = .01;
-bigw = 20;
+bigw = 2000;
 wvec = (-2*bigw:bigw)*dw;
-[voikg, dsvec]=PDECGApproxValue(wvec,s0,scale);
+[voikg, dsvec]=PDECGApproxValue(wvec,s0,scale);     % with 'scale' passed, a number of powers of 2 of budgets are checked: might be better to do without 'scale' passed
 voikg = voikg - max(0,wvec);
-plot(wvec,voikg);
+[voikg2, dsvec2]=PDECGApproxValue(wvec,s0);           % without 'scale' passed, a large number of values of 's' are checked.
+voikg2 = voikg2 - max(0,wvec);
 fignum=fignum+1;figure(fignum);
-plot(wvec,voikg);
+plot(wvec,voikg,'-',wvec,voikg2,'-.');
+legend('with scale', 'without');
 fignum=fignum+1;figure(fignum);
 %plot(wvec/scale.beta,1./(scale.gamma*dsvec));
-plot(wvec/scale.beta,1./(scale.gamma*(s0-dsvec)) - 1./(scale.gamma*s0));
+%plot(wvec/scale.beta,1./(scale.gamma*(s0-dsvec)) - 1./(scale.gamma*s0));
+plot(wvec,dsvec,'-',wvec,dsvec2,'-.');
+legend('with scale', 'without');
+
+[kg, dsvec]=PDECGKGs(wvec,s0,scale);     % with 'scale' passed, a number of powers of 2 of budgets are checked: might be better to do without 'scale' passed
+[kg2, dsvec2]=PDECGKGs(wvec,s0);           % without 'scale' passed, a large number of values of 's' are checked.
+fignum=fignum+1;figure(fignum);
+plot(wvec,kg,'-',wvec,kg2,'-.');
+legend('with scale', 'without');
+fignum=fignum+1;figure(fignum);
+%plot(wvec/scale.beta,1./(scale.gamma*dsvec));
+plot(wvec,dsvec,'-',wvec,dsvec2,'-.');
+legend('with scale', 'without');
+
 
 
 t0 = param.t0

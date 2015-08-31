@@ -41,7 +41,7 @@ elseif nargin < 3   % no parameter passed in for scale: try to flood
     svec = s0*(1-(1:NUMCHECKS)/(4*NUMCHECKS));
     sincrem = s0-svec(svec>0 & svec < s0);             % time elapse from scur to valid values in svec    
     for i=1:length(sincrem)           % check the lookaheads over that interval
-        kgtmp = - 1 + sqrt(sincrem(i)) * PsiNorm(-wvec/sqrt(sincrem(i))) / (1/svec(i) - 1/s0);
+        kgtmp = - 1 + sqrt(sincrem(i)) * PsiNorm(-abs(wvec)/sqrt(sincrem(i))) / (1/svec(i) - 1/s0);
         dsvec(kgtmp > kgfactor) = sincrem(i);
         kgfactor = max(kgfactor,kgtmp);
     end
@@ -61,7 +61,7 @@ else
     sincrem = s0-svec(svec>0 & svec < s0) ;            % time elapse from scur to valid values in svec    
 %    figure(1001); hold off; figure(1002); hold off; figure(1003); hold off;
     for i=1:length(sincrem)           % check the lookaheads over that interval
-        kgtmp = - 1 + sqrt(sincrem(i)) .* PsiNorm(-wvec/sqrt(sincrem(i))) ./ (1./(s0-sincrem(i)) - 1/s0);
+        kgtmp = - 1 + sqrt(sincrem(i)) .* PsiNorm(-abs(wvec)/sqrt(sincrem(i))) ./ (1./(s0-sincrem(i)) - 1/s0);
         dsvec(kgtmp > kgfactor) = sincrem(i) ;
 %        costtmp = -(1/(s0-sincrem(i)) - 1/s0);
 %        costvec(evitmp > evivec) = costtmp;
@@ -81,7 +81,7 @@ else
     for i=1:length(CHECKVEC)
         sfactor = ( 1 /(4*gamma*s0)  ) * (kgstarterm - 1 + sqrt(kgstarterm.^2 + CHECKVEC(i)*kgstarterm + 1)); % m-underbar from prop 4, frazier & powell, 2010
         sincrembase = s0 * max( gamma*s0 / (1 + gamma*s0) , sfactor*gamma*s0 ./ ( 1 + sfactor*gamma*s0) ); % this is the increment for kgstar for C&F. 
-        kgtmp = - 1 + sqrt(sincrembase) .* PsiNorm(-wvec./sqrt(sincrembase)) . (1./(s0-sincrembase) - 1/s0);
+        kgtmp = - 1 + sqrt(sincrembase) .* PsiNorm(-abs(wvec)./sqrt(sincrembase)) . (1./(s0-sincrembase) - 1/s0);
         dsvec2(kgtmp > kgfactor2) = sincrembase(kgtmp > kgfactor2);%(evitmp > evivec2);
         kgfactor2 = max(kgfactor2,kgtmp);
         figure(10001); plot(wvec,sincrembase); hold on; plot(wvec,s0);

@@ -37,15 +37,15 @@ if s0 <= 0 % need a valid value of s in order to do computations.
     warning('s0 should be strictly greater than 0');
     return;
 elseif nargin < 3   % no parameter passed in for scale: try to flood
-    NUMCHECKS = 100; % FIX: Can probabably find a way to speed this check, but this is reasonable proxy for the moment.
+    NUMCHECKS = 200; % FIX: Can probabably find a way to speed this check, but this is reasonable proxy for the moment.
         % try to find KG* type 'best' lookahead value in (w,s) scale when
         % w0=0 and s=s0
-    svec = s0*(1-(1:NUMCHECKS)/(4*NUMCHECKS));
+    svec = s0*(1-(1:NUMCHECKS)/(3*NUMCHECKS));
     sincrem = s0-svec(svec>0 & svec < s0);             % time elapse from scur to valid values in svec    
     for i=1:length(sincrem)           % check the lookaheads over that interval
         %erew = (max(0,wvec+dincrem(i)) + max(0,wvec) + max(0,wvec-dincrem(i)))/3; % reward making decision in a bit of time
         %evitmp = exp(1/s0 - 1/svec(i)) * erew; % this is in spirit of
-        evitmp = exp(1/s0 - 1/svec(i)) * sqrt(sincrem(i)) * PsiNorm(-wvec/sqrt(sincrem(i)));
+        evitmp = exp(1/s0 - 1/(s0-sincrem(i))) * sqrt(sincrem(i)) * PsiNorm(-wvec/sqrt(sincrem(i)));
         dsvec(evitmp > evivec) = sincrem(i);
         evivec = max(evivec,evitmp);
     end
@@ -57,8 +57,8 @@ else  % third argument was passed - try to pick out scaling parameter gamma from
     end
     
     LOWVAL = 0;     % require at least 2^0 = 1 step look ahead
-    HIVAL = 7;      % check lookahead up to 2^HIVAL steps aheads
-    NUMCHECKS = 20; % check 20 values of increment
+    HIVAL = 16;      % check lookahead up to 2^HIVAL steps aheads
+    NUMCHECKS = 200; % check 20 values of increment
     tstincrem = 2.^(LOWVAL:((HIVAL-LOWVAL)/NUMCHECKS):HIVAL);
     svec = s0 * 1 ./ ( 1 + tstincrem*gamma*s0);
     sincrem = s0-svec(svec>0 & svec < s0) ;            % time elapse from scur to valid values in svec    
