@@ -70,9 +70,9 @@ end
 
 %param.online = false;    % default: offline learning, meaning results of samples are not counted in expected reward
 %param.finiteT = false;    % default: infinite horizon problem
-if param.t0 < 0.1
+if param.t0 < 0.001
     param.t0 = defaultparam.t0;  % effective number of samples in prior distribution for unknown mean
-    errorlist = sprintf('%s\n%s: t0 should exceed 0.1, reset to %f\n',errorlist,routinename,param.t0);
+    errorlist = sprintf('%s\n%s: t0 should be at least 0.001, reset to %f\n',errorlist,routinename,param.t0);
     rval = 0;
 end
 if param.tEND < param.t0

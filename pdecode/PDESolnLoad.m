@@ -31,7 +31,8 @@ function [rval, PDESolnStructure] = PDESolnLoad(B1filestring, filestart, fileend
 % initialize output values and set up housekeeping
 rval = 0;               % assume failure to load unless loading is completed
 PDESolnStructure = [];  % default to empty solution structure
-routinename = 'PDESolnLoad';
+[ST,I] = dbstack;
+routinename = ST.name;  % get function name
 
 % error checking on file name
 if (nargin<1) 

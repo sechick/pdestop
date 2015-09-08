@@ -126,8 +126,10 @@ else
     dw = approxmeth(1);
 end
 ds = dw^2 * 2 / 3;          % in trinomial tree, equal probs of going up, straight or down implies this equation to get correct variance of reverse time brownian motion
-SAVEEVERY=200;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
-NUMSAVESPERITER=140;  % number of times we save the PDE values, for storage in matrix and files?
+%SAVEEVERY=280;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
+%NUMSAVESPERITER=100;  % number of times we save the PDE values, for storage in matrix and files?
+SAVEEVERY=350;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
+NUMSAVESPERITER=80;  % number of times we save the PDE values, for storage in matrix and files?
 Numds=SAVEEVERY*NUMSAVESPERITER;   % number of time steps per grid, % 8000 or 16000 for example, 
 FRACTOKEEP = 0.9; % use this to remember the state at some earlier time: 0.9 or 085 should get of ripples in many cases, make sure it is smaller than
 if (FRACTOKEEP > (1-2/SAVEEVERY)) | (FRACTOKEEP < 0.5)
@@ -162,7 +164,7 @@ if isa(approxmeth, 'function_handle')
     %dsvec = ds*spowvec;
     ceilfactor=1.2; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
     if isDisc   
-        ceilfactor = 2.5;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
+        ceilfactor = 1.8; %2.25 %.5;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
     end
     ratiovec = wmaxvec ./ dwvec;    % figure roughly how many dw from 0 to upper boundary...
     bigw = ceil(ceilfactor*max(ratiovec)); % hit that figure with a multiplier in order to make sure there is a margin of error, especially below boundary

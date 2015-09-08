@@ -14,13 +14,14 @@
 % should be the expected number of samples to take additionally to achieve
 % it.
 generictermreward=@(wvec,s,p1,p2) PDEsimplereward(wvec);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
+
 CFApproxValuefunc=@(wvec,s,p1,p2) PDECFApproxValue(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
 CFparamvec = { 't0', .1, 'tEND', 30000, 'precfactor', 8, 'BaseFileName', 'CF' };
-baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
 %figdir Figure\, matdir Matfiles\ UnkVariance 0
 
 % Set up generic functions for positive discounting
@@ -29,7 +30,7 @@ upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
-CGparamvec = { 't0', 0.25, 'tEND', 20000, 'precfactor', 8, 'BaseFileName', 'CG' };
+CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 6, 'BaseFileName', 'CG' };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
@@ -86,7 +87,7 @@ toc
 % Load in the data structures form those computations
 BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
 [rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
-if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     UtilPlotDiagnostics(cgSoln);
 end
 
