@@ -137,11 +137,6 @@ if (FRACTOKEEP > (1-2/SAVEEVERY)) | (FRACTOKEEP < 0.5)
 end
 myeps = 10^-10; %min(1,beta)*min(10^-12, ds/1000);    % a small value, for use in checking if things are close to 0 or not
 
-if PDEparam.DoPlot
-    s0
-    sEND
-end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CHUNK1: Set up the Grid
@@ -162,7 +157,7 @@ if isa(approxmeth, 'function_handle')
     wmaxvec=approxmeth(smaxvec,PDEscale,PDEparam);      % approximate the maximum value of w for which the grid must account
     dwvec = dw*wpowvec;
     %dsvec = ds*spowvec;
-    ceilfactor=1.2; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
+    ceilfactor=1.05; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
     if isDisc   
         ceilfactor = 1.8; %2.25 %.5;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
     end
@@ -185,7 +180,15 @@ hifrac = 0; lowfrac = 1; % These will be used in diagnostics to see if ceilfacto
 % discounting - this will help the code run faster.
 
 % Set up the initial conditions for the recursions
-scur = sinit
+scur = sinit;
+
+if PDEparam.DoPlot
+    s0
+    sEND
+    scur
+    bigw
+end
+
 % vectors for value function
 [Cinitvec, sincrem] = rewardfunc(wvec,scur,PDEscale, PDEparam); % Approximation of value to go, given stopping at the discretized time sinit.
 Cin=Cinitvec;    % initialize terminal condition assuming immediate stopping.

@@ -36,7 +36,9 @@ ax = get(h, 'CurrentAxes');
 
 % make it tight
 ti = get(ax,'TightInset');
-set(ax,'Position',[ti(1) ti(2) 1-ti(3)-ti(1) 1-ti(4)-ti(2)]);
+if (1-ti(3)-ti(1) > ti(1)) & (1-ti(4)-ti(2) > ti(2))
+    set(ax,'Position',[ti(1) ti(2) 1-ti(3)-ti(1) 1-ti(4)-ti(2)]);
+end
 
 % adjust the papersize
 set(ax,'units','centimeters');

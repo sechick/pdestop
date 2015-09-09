@@ -21,7 +21,7 @@ upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
-CFparamvec = { 't0', .1, 'tEND', 30000, 'precfactor', 8, 'BaseFileName', 'CF' };
+CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 8, 'BaseFileName', 'CF' };
 %figdir Figure\, matdir Matfiles\ UnkVariance 0
 
 % Set up generic functions for positive discounting
@@ -49,6 +49,8 @@ scalevec = CFscalevec;
 paramvec = [CFparamvec, CFfunctionset, baseparams];
 [scale, param] = PDEInputConstructor( scalevec, paramvec );
 [scale, param] = PDEInputValidator( scale, param )
+s0 = 1/(scale.gamma * param.t0)
+sEND = 1/(scale.gamma * param.tEND)
 tic
 [rval, MAXFiles] = PDESolnCompute(scale, param);
 % Load in the data structures form those computations
@@ -90,6 +92,16 @@ BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow
 if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     UtilPlotDiagnostics(cgSoln);
 end
+
+if ~exist('fignum','var'), fignum = 20; end;
+[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
+% alternatively, DoCGPlots can take a string, or can be left blank to load
+% in files in the default location
+%[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, 'Matfiles\CG' );
+%[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum );
+
+        evalfixeddeadline = max(0,max(evalfixeddeadline,wmat)); % allow for immediate stopping here - the original paper did not do that
+
 
 %%% To TEST KGs stuff for case of discounting
 if ~exist('fignum','var'), fignum = 20; end;

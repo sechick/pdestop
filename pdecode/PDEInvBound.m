@@ -4,7 +4,7 @@ function [ svec ] = PDEInvBound( bndfunchandle, wvec )
 
     svec = zeros(size(wvec)); % preallocate memory, by default value is 0 (to handle cases when svec(i) is incorrectly passed as <0)
 
-    sqrdiff = @(x,y) (x-y)^2;
+    sqrdiff = @(x,y) 1000*(x-y)^2;
 
     lasts=1; % initial search point for inverse
     for i=1:length(wvec)
