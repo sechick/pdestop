@@ -1,4 +1,4 @@
-function [rval] = UtilPlotDiagnostics( cfSoln )
+function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
 % UtilPlotDiagnostics: Plot a bunch of plots for the solution of the PDE
 % found in cfSoln. Useful for visualizing the data structures, and for
 % diagnostics for the data sets in question. plots are saved in the
@@ -210,4 +210,5 @@ function [rval] = UtilPlotDiagnostics( cfSoln )
     mytitle = strcat(figdir,fName,'FigDiffUpDownWS',int2str(ijk),'.eps');
     if figsave print('-deps',mytitle); end	
 
+    fignum = figout;
 end

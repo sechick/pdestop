@@ -18,9 +18,11 @@ DelayOffApproxV=@(wvec,s,p1,p2) DelayNodiscOffApproxV(wvec,s,p1);   % this is va
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOffApproxV, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOfflineReward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
+
+% Put in data for solution for Stent example
 tauval = 907;
 StentScale = {'c', 200, 'sigma', 17538, 'discrate', 0, 'P', 2e6, 'tau', tauval };
-StentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'BaseFileName', sprintf('DelOffTau%d',tauval) };
+StentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 
