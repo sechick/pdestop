@@ -12,7 +12,7 @@ if nargin < 1
     [rval, pdeSolnStruct] = PDESolnLoad(basename);
 elseif isstruct(pdeSoln)
     pdeSolnStruct = pdeSoln;
-    basename = strcat(pdeSoln.Header.PDEparam.matdir,pdeSoln.Header.PDEparam.BaseFileName);
+    basename = strcat(PDEparam2.matdir,PDEparam2.BaseFileName);
     rval = 1;
 else
     basename = pdeSoln;
@@ -31,7 +31,7 @@ fracheight = 0.9;   % take up 90% of screen
 square = true;      % make plot format to be 'square' if true
 
 % do a bit of input parameter checking
-figdir = pdeSolnStruct.Header.PDEparam.figdir;
+figdir = PDEparam2.figdir;
 figsave = true;
 
 % create the directory for the figures if it does not exist already and the figures are
@@ -40,19 +40,19 @@ if ~isdir(figdir) & figsave
     mkdir(figdir);
 end
 
-pdeSolnStruct.Header;
-PDEscale=pdeSolnStruct.Header.PDEscale;
-PDEparam=pdeSolnStruct.Header.PDEparam;
+%pdeSolnStruct.Header;
+PDEscale2=pdeSolnStruct.Header.PDEscale;
+PDEparam2=pdeSolnStruct.Header.PDEparam;
 
 firsts = pdeSolnStruct.Header.firsts;
 lasts = pdeSolnStruct.Header.lasts;
 lasthelds = pdeSolnStruct.Header.lasthelds;
 fName = pdeSolnStruct.Header.fName;
 
-alpha = pdeSolnStruct.Header.PDEscale.alpha;
-beta = pdeSolnStruct.Header.PDEscale.beta;
-gamma = pdeSolnStruct.Header.PDEscale.gamma;
-approxmeth = pdeSolnStruct.Header.PDEparam.approxmethod;
+alpha = PDEscale2.alpha;
+beta = PDEscale2.beta;
+gamma = PDEscale2.gamma;
+approxmeth = PDEparam2.approxmethod;
 
 
 %% Generate plots similar to those in the Electronic companion
@@ -70,7 +70,7 @@ approxmeth = pdeSolnStruct.Header.PDEparam.approxmethod;
         up1 = pdeSolnStruct.Data(ijk).up1;
         down1 = pdeSolnStruct.Data(ijk).down1;
 
-%        Vvec = stopfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam); % compute value of stopping immediately
+%        Vvec = stopfunc(wvec(:),sval,PDEscale2,PDEparam2); % compute value of stopping immediately
         Bwsmatrix = pdeSolnStruct.Data(ijk).Bwsmatrix;
         ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
         EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
@@ -230,7 +230,7 @@ numrepstest = 1 ./ (scale.gamma * stest);
         up1 = pdeSolnStruct.Data(ijk).up1;
         down1 = pdeSolnStruct.Data(ijk).down1;
 
-%        Vvec = stopfunc(wvec(:),sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam); % compute value of stopping immediately
+%        Vvec = stopfunc(wvec(:),sval,PDEscale2,PDEparam2); % compute value of stopping immediately
         Bwsmatrix = pdeSolnStruct.Data(ijk).Bwsmatrix;
         ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
         EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
@@ -239,7 +239,7 @@ numrepstest = 1 ./ (scale.gamma * stest);
         for j=1:length(svec)
             vveccol  = PDEGetVals(pdeSolnStruct,wvec,svec(j)) ;
             Vvec(:,j) = vveccol;
-            stopnowval(:,j) = pdeSolnStruct.Header.PDEparam.termrewardfunc(wvec,svec(j),scale, param); % get value of stopping immediately.
+            stopnowval(:,j) = PDEparam2.termrewardfunc(wvec,svec(j),scale, param); % get value of stopping immediately.
          end
         
         eimprovement = abs( -g0 + delayfactor * Vvec / scale.beta - stopnowval / scale.beta);
@@ -328,6 +328,9 @@ numrepstest = 1 ./ (scale.gamma * stest);
 
     end 
 
+    % extras
+    figout = PDEComparePDEboundApproxbound( fignum, pdeSoln );
+    
 warning('not yet implemented: C&G 2009 Table 1');
 warning('not yet implemented: C&G 2009 Figure EC.1');
 

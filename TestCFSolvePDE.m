@@ -62,6 +62,9 @@ if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps
     UtilPlotDiagnostics(cfSoln);
 end
 
+if ~exist('fignum','var'), fignum = 20; end;
+[ rval, figout, ~ ] = DoCFPlots( fignum, cfSoln );
+
 %%% To TEST KGs stuff for case of no discounting
 if ~exist('fignum','var'), fignum = 20; end;
 s0 = 1/(scale.gamma*param.tEND);
@@ -101,9 +104,6 @@ if ~exist('fignum','var'), fignum = 20; end;
 % in files in the default location
 %[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, 'Matfiles\CG' );
 %[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum );
-
-        evalfixeddeadline = max(0,max(evalfixeddeadline,wmat)); % allow for immediate stopping here - the original paper did not do that
-
 
 %%% To TEST KGs stuff for case of discounting
 if ~exist('fignum','var'), fignum = 20; end;
@@ -186,42 +186,10 @@ APrioriRegret=(scale.sigma/sqrt(param.t0)) * PsiNorm( abs(mu0-m) / (scale.sigma/
 tmppp=PDEGetVals(cfSoln,(mu0-m)*scale.beta,1/(param.t0*scale.gamma))/scale.beta
 APrioriRegret-tmppp
 
-% start to reconstruct the values for plotting....
-sbvec = cfSoln.Computed.accumsvec;
-up = cfSoln.Computed.accumupper;
-lo = cfSoln.Computed.accumlower;
-findex = cfSoln.Computed.fileindx;
-
-if param.DoPlot
-    if ~exist('fignum','var'), fignum = 20; end;
-    if isa(cfSoln.Header.PDEparam.approxmethod,  'function_handle')
-    %    dt = 1/scale.gamma/s0 - 1/scale.gamma/(s0+ds)
-    %    dmu=dw/beta
-        mysmallfontsize = 14;
-        myfontsize = 16;
-        fignum=fignum+1;figure(fignum);
-        tstcurv=cfSoln.Header.PDEparam.approxmethod(sbvec);
-        plot(sbvec,up,'--',sbvec,tstcurv,'-.');set(gca,'FontSize',mysmallfontsize);
-        legend('From PDE','Quick Approx.','Location','SouthEast')
-        xlabel('Reverse time scale,  s=1/(\gamma t)','FontSize',myfontsize,'FontName','Times'); ylabel('Rescaled mean, w','FontSize',myfontsize,'FontName','Times')
-        %title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat('BoundaryWS','.eps');
-        print('-deps',mytitle);	
 
         betastepvec=[1 5 10 20 50 100 200 500 1000];
         numbetas=length(betastepvec);
         betamatrix=zeros(numbetas,length(up));
-
-        fignum=fignum+1;figure(fignum);
-        loglog(1/scale.gamma./sbvec,up/scale.beta,'--',1/scale.gamma./sbvec,tstcurv/scale.beta,'-.');set(gca,'FontSize',mysmallfontsize);
-        legend('From PDE','Quick Approx.','Location','NorthEast')
-        xlabel('Effective number of replications, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
-        %title('Upper stopping boundary','FontSize',myfontsize,'FontName','Times')
-        mytitle = strcat('BoundaryYT','.eps');
-        print('-deps',mytitle);	
-    end
-end
-
 
     mwig = param.retire*scale.beta;
     
