@@ -31,5 +31,7 @@ For future work:
 2. Delayed samples (as in the repo github:sechick\htadelay) solved with the Chernoff scaling rather than the `normal' scaling in the number of samples.
 3. Monte carlo sampling tools.
 
-The code is in development stages and is provided as is for academic use. All rights reserved.
+The code is in development stages and is provided as is for academic use. 
+
+(c) 2015, S Chick, All rights reserved.
 
