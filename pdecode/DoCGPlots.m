@@ -181,7 +181,7 @@ ylabel('Output mean, y_t / t','FontSize',myfontsize,'FontName','Times');
 mytitle = strcat(fName,'Fig1');
 PDEUtilSaveFigEpsPdf( fignum, figdir, mytitle );
 
-% Figure 2 for example 2
+% Figure 2 for example 2, similar to Figure EC.2
 c=1;
 scale.c = c;
 wtest = (c/scale.discrate) * scale.beta;
@@ -235,13 +235,12 @@ numrepstest = 1 ./ (scale.gamma * stest);
         ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
         EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
         Vvec = zeros(size(Bwsmatrix)); 
-        stopnowval = zeros(size(Bwsmatrix)); 
+        stopnowval = wvec' * ones(1,length(svec));  % allocate space and put in default values
         for j=1:length(svec)
             vveccol  = PDEGetVals(pdeSolnStruct,wvec,svec(j)) ;
             Vvec(:,j) = vveccol;
-            stopnowval(:,j) = pdeSolnStruct.Header.PDEparam.termrewardfunc(wvec); % get value of stopping immediately.
-%            stopnowval(:,j) = wvec; % get value of stopping immediately.
-        end
+            stopnowval(:,j) = pdeSolnStruct.Header.PDEparam.termrewardfunc(wvec,svec(j),scale, param); % get value of stopping immediately.
+         end
         
         eimprovement = abs( -g0 + delayfactor * Vvec / scale.beta - stopnowval / scale.beta);
         bigw = (length(wvec)-1)/2;
@@ -294,14 +293,43 @@ numrepstest = 1 ./ (scale.gamma * stest);
 
     % Figure 4 for example 4
         td = 60; %time in days for analysis
-        tddelayfactor = 1; exp(-annualdisc * td / 365);
+        tddelayfactor = exp(-annualdisc * td / 365);
         r = td * 24 * 60 / eta; % number of replications which are possible
         tp = 1/26 ; % two weeks expressed in units of year, for delay of implementing alternative post selection
-        tpdelayfactor = 1; exp(-annualdisc * tp);
+        tpdelayfactor = exp(-annualdisc * tp);
  
+        t0vec = 1./svec/scale.gamma;
+        sigvec = scale.sigma * sqrt( r ./ (t0vec .* (r + t0vec))) ;
+        sigmat = ones(length(wvec),1) * sigvec;
+        wmat = (wvec' / scale.beta) * ones(1,length(svec))  ;
+%        evalfixeddeadline = tddelayfactor * sigmat .* PsiNorm( - wmat ./ sigmat ); 
+        evalfixeddeadline = tddelayfactor * (sigmat .* PsiNorm( - wmat ./ sigmat )); 
+%        evalfixeddeadline = max(0,evalfixeddeadline); % allow for immediate stopping here - the original paper did not do that
+%        evalfixeddeadline = max(0,max(evalfixeddeadline,wmat)); % allow for immediate stopping here - the original paper did not do that
+        delsequential = tpdelayfactor * Vvec / scale.beta - evalfixeddeadline;
+        
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum=fignum+1;figure(fignum);
+        hold off
+        MaxV = minV;
+%        [C, h]=contour(1./svec/scale.gamma,wvec/scale.beta,eimprovement,V2); 
+        V = [(2*MaxV:4*MaxV:10*MaxV)/10000 (2*MaxV:4*MaxV:10*MaxV)/1000 (2*MaxV:4*MaxV:10*MaxV)/100 (2*MaxV:4*MaxV:30*MaxV)/10 ];
+        V2 = [-V V];
+        [C, h]=contour(1./svec/scale.gamma,wvec/scale.beta,delsequential,V2); 
+        clabel(C,h,'FontSize',mysmallfontsize,'FontName','Times','LabelSpacing',points);
+        hold on
+        axis(tmp);
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
+        xlabel('Certainty about unknown size of improvement, t_0 = \sigma^2 / \sigma_0^2','FontSize',myfontsize,'FontName','Times'); 
+        ylabel('A priori expected benefit of improvement, \mu_0','FontSize',myfontsize,'FontName','Times')
+        title('Value in flexible stopping, e^{-\delta t_d} V(\mu_0,t_0) - E[value with fixed]','FontSize',myfontsize,'FontName','Times')
+        mytitle = strcat(fName,'Fig-Like4-',int2str(ijk));
+        PDEUtilSaveFigEpsPdf( fignum, figdir, mytitle );
 
     end 
 
+warning('not yet implemented: C&G 2009 Table 1');
+warning('not yet implemented: C&G 2009 Figure EC.1');
 
 %%%%%%%%%%%%%%%%%%%%%%%%
     figout = fignum;

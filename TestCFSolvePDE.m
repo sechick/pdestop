@@ -56,7 +56,8 @@ tic
 % Load in the data structures form those computations
 toc
 BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
-[rval, cfSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+%[rval, cfSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+[rval, cfSoln] = PDESolnLoad(BaseFileName); % by default load all subgroups
 if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     UtilPlotDiagnostics(cfSoln);
 end
@@ -88,13 +89,14 @@ tic
 toc
 % Load in the data structures form those computations
 BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
-[rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+%[rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+[rval, cgSoln] = PDESolnLoad(BaseFileName);
 if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     UtilPlotDiagnostics(cgSoln);
 end
 
 if ~exist('fignum','var'), fignum = 20; end;
-[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
+[ rval, figout, ~ ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
 % alternatively, DoCGPlots can take a string, or can be left blank to load
 % in files in the default location
 %[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, 'Matfiles\CG' );
