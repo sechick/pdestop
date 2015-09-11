@@ -55,7 +55,7 @@ for i=1:(paramarrlen/2)
 %        pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
         rval = 0;
     else
-        warning(sprintf('adding pdeparam field: %s',char(scalearray{2*i-1}))); 
+        warning(sprintf('adding pdeparam field: %s',char(paramarray{2*i-1}))); 
         pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
 %        rval = 0;
     end
