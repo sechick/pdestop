@@ -8,6 +8,13 @@
 %Normal(A,\sigma^2), and prior on A ~ Normal(\mu_0, \sigma_0^2), and
 %further t_0 = \sigma^2 / \sigma_0^2.
 
+fDir = 'Matfiles\';
+onflag = false;
+THoriz = -1;    % set to below 0 for infinite horizon
+[cgSoln, cfSoln, cgOn, cfOn] = PDECreateSolnFiles(fDir, onflag, THoriz);
+
+
+
 % Set up generic functions for zero discounting,
 % these functions should return two vectors of the same size as wvec: the
 % first should be the expected reward at time s given wvec, the second
@@ -21,7 +28,7 @@ upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
-CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 8, 'BaseFileName', 'CF' };
+CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'BaseFileName', 'CF' };
 %figdir Figure\, matdir Matfiles\ UnkVariance 0
 
 % Set up generic functions for positive discounting
@@ -30,7 +37,7 @@ upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
-CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 6, 'BaseFileName', 'CG' };
+CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'BaseFileName', 'CG' };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
@@ -60,11 +67,13 @@ BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow
 [rval, cfSoln] = PDESolnLoad(BaseFileName); % by default load all subgroups
 if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     if ~exist('fignum','var'), fignum = 20; end;
-    fignum = UtilPlotDiagnostics(fignum, cfSoln);
+    fignum = UtilPlotDiagnostics(fignum, cfSoln);           % generate a bunch of plots which can be used as diagnostics of computations
+    [ rval, fignum, ~ ] = DoCFPlots( fignum, cfSoln );      % generate plots from Chick & Frazier (2012)
+    % alternatively, DoCGPlots can take a string, or can be left blank to load
+    % in files in the default location
+    %[ rval, fignum, cfSoln ] = DoCFPlots( fignum, 'Matfiles\CF' );
+    %[ rval, fignum, cfSoln ] = DoCFPlots( fignum );
 end
-
-if ~exist('fignum','var'), fignum = 20; end;
-[ rval, fignum, ~ ] = DoCFPlots( fignum, cfSoln );
 
 %%% To TEST KGs stuff for case of no discounting
 if ~exist('fignum','var'), fignum = 20; end;
@@ -98,14 +107,12 @@ BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow
 if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
     if ~exist('fignum','var'), fignum = 20; end;
     fignum = UtilPlotDiagnostics(fignum, cgSoln);
+    [ rval, fignum, ~ ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
+    % alternatively, DoCGPlots can take a string, or can be left blank to load
+    % in files in the default location
+    %[ rval, fignum, cgSoln ] = DoCGPlots( fignum, 'Matfiles\CG' );
+    %[ rval, fignum, cgSoln ] = DoCGPlots( fignum );
 end
-
-if ~exist('fignum','var'), fignum = 20; end;
-[ rval, fignum, ~ ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
-% alternatively, DoCGPlots can take a string, or can be left blank to load
-% in files in the default location
-%[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, 'Matfiles\CG' );
-%[ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum );
 
 %%% To TEST KGs stuff for case of discounting
 if ~exist('fignum','var'), fignum = 20; end;
@@ -121,8 +128,6 @@ fignum=fignum+1;figure(fignum);
 plot(wvec,voikg,'-',wvec,voikg2,'-.');
 legend('with scale', 'without');
 fignum=fignum+1;figure(fignum);
-%plot(wvec/scale.beta,1./(scale.gamma*dsvec));
-%plot(wvec/scale.beta,1./(scale.gamma*(s0-dsvec)) - 1./(scale.gamma*s0));
 plot(wvec,dsvec,'-',wvec,dsvec2,'-.');
 legend('with scale', 'without');
 

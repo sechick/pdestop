@@ -2,9 +2,8 @@ function [ rval, figout, pdeSolnStruct ] = DoCGPlots( fignum, pdeSoln )
 
 % look in default location for base name of input files for discounted
 % reward case, otherwise use the argument passed to this function.
-rval = 0;               % assume failure to load unless loading is completed
-PDESolnStructure = [];  % default to empty solution structure
-[ST,I] = dbstack;
+%rval = 0;               % assume failure to load unless loading is completed
+[ST,~] = dbstack;
 routinename = ST.name;  % get function name
 
 if nargin < 1
@@ -12,6 +11,7 @@ if nargin < 1
     [rval, pdeSolnStruct] = PDESolnLoad(basename);
 elseif isstruct(pdeSoln)
     pdeSolnStruct = pdeSoln;
+    PDEparam2=pdeSolnStruct.Header.PDEparam;
     basename = strcat(PDEparam2.matdir,PDEparam2.BaseFileName);
     rval = 1;
 else
@@ -19,8 +19,12 @@ else
     [rval, pdeSolnStruct] = PDESolnLoad(basename);
 end
 
+%pdeSolnStruct.Header;
+%PDEscale2=pdeSolnStruct.Header.PDEscale;
+PDEparam2=pdeSolnStruct.Header.PDEparam;
+
 if ~rval
-    warning(routinename, ': unable to open ',basename);
+    warning(routinename, ': unable to open ', basename);
 	return; 
 end
 
@@ -36,23 +40,19 @@ figsave = true;
 
 % create the directory for the figures if it does not exist already and the figures are
 % to be saved
-if ~isdir(figdir) & figsave
+if ~isdir(figdir) && figsave
     mkdir(figdir);
 end
 
-%pdeSolnStruct.Header;
-PDEscale2=pdeSolnStruct.Header.PDEscale;
-PDEparam2=pdeSolnStruct.Header.PDEparam;
-
-firsts = pdeSolnStruct.Header.firsts;
-lasts = pdeSolnStruct.Header.lasts;
-lasthelds = pdeSolnStruct.Header.lasthelds;
+%firsts = pdeSolnStruct.Header.firsts;
+%lasts = pdeSolnStruct.Header.lasts;
+%lasthelds = pdeSolnStruct.Header.lasthelds;
 fName = pdeSolnStruct.Header.fName;
 
-alpha = PDEscale2.alpha;
-beta = PDEscale2.beta;
-gamma = PDEscale2.gamma;
-approxmeth = PDEparam2.approxmethod;
+%alpha = PDEscale2.alpha;
+%beta = PDEscale2.beta;
+%gamma = PDEscale2.gamma;
+%approxmeth = PDEparam2.approxmethod;
 
 
 %% Generate plots similar to those in the Electronic companion
@@ -60,31 +60,25 @@ approxmeth = PDEparam2.approxmethod;
 % install for the PDE solution)
 %    for ijk = 1:1
     for ijk = pdeSolnStruct.Header.StartFileVal:pdeSolnStruct.Header.EndFileVal
-        block = ijk;
- 
         svec = pdeSolnStruct.Data(ijk).svec;
         wvec = pdeSolnStruct.Data(ijk).wvec;
 
         upvec = pdeSolnStruct.Data(ijk).upvec;
-        downvec = pdeSolnStruct.Data(ijk).downvec;
+        %downvec = pdeSolnStruct.Data(ijk).downvec;
         up1 = pdeSolnStruct.Data(ijk).up1;
-        down1 = pdeSolnStruct.Data(ijk).down1;
+        %down1 = pdeSolnStruct.Data(ijk).down1;
 
 %        Vvec = stopfunc(wvec(:),sval,PDEscale2,PDEparam2); % compute value of stopping immediately
         Bwsmatrix = pdeSolnStruct.Data(ijk).Bwsmatrix;
-        ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
-        EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
+%        ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
+%        EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
         Vvec = zeros(size(Bwsmatrix)); 
         for j=1:length(svec)
             vveccol  = PDEGetVals(pdeSolnStruct,wvec,svec(j)) ;
             Vvec(:,j) = vveccol;
         end
         
-        dw = wvec(2)-wvec(1);
-
-        maxup1 = max(up1);
-        maxupvec = max(upvec); 
-        maxwvec = max(wvec);
+        %dw = wvec(2)-wvec(1);
 
         % try to find some good contour values for the contour plot
         maxbnd = 1.1*max(upvec);
@@ -100,7 +94,7 @@ approxmeth = PDEparam2.approxmethod;
         hold on
         PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         plot(1./svec,upvec,'-','LineWidth',2);set(gca,'FontSize',mysmallfontsize);
-        tmp=axis;tmp(4)=1.2*max(max(up1),max(upvec)); tmp(3)=1.05*min(min(down1),min(downvec)); tmp(3)=-1.2*tmp(4); axis(tmp);
+        tmp=axis;tmp(4)=1.2*max(max(up1),max(upvec)); tmp(3)=-1.2*tmp(4); axis(tmp);
         xlabel('Scaled time, \tau','FontSize',myfontsize,'FontName','Times'); 
         ylabel('Scaled mean, z_\tau / \tau','FontSize',myfontsize,'FontName','Times')
         title('Value function B_1','FontSize',myfontsize,'FontName','Times')
@@ -112,7 +106,7 @@ approxmeth = PDEparam2.approxmethod;
 %% Figure EC.6 A and B (at least for boundary: the B_1(0,s) is not as important here, supplemented with 'improved' analytical approximation for boundary
 accumsvec = pdeSolnStruct.Computed.accumsvec;
 accumupper = pdeSolnStruct.Computed.accumupper;
-accumlower = pdeSolnStruct.Computed.accumlower;
+%accumlower = pdeSolnStruct.Computed.accumlower;
 brezzilaiupper = sqrt(accumsvec) .* bl_git_psi(accumsvec,false);
 newcgbound = CGApproxBoundW(accumsvec);
 
@@ -155,7 +149,9 @@ scalevec = {'c', 0, 'sigma', 1e7, 'discrate', eta*annualdisc/365/24/60, 'P', 1 }
 CGparamvec = { 't0', 1, 'tEND', 10e5, 'precfactor', 6, 'BaseFileName', 'CG' };
 paramvec = [CGparamvec, CGfunctionset, baseparams];
 [scale, param] = PDEInputConstructor( scalevec, paramvec );
-[scale, param] = PDEInputValidator( scale, param )
+[scale, param] = PDEInputValidator( scale, param );
+disp(scale);
+disp(param);
 
 wtest = 10.^(5:7) * scale.beta;
 stest = PDEInvBound( upperDisc, wtest );
@@ -175,7 +171,6 @@ for j=1:length(wtest);
 end
 xlabel('Number of replications, t','FontSize',myfontsize,'FontName','Times'); 
 ylabel('Output mean, y_t / t','FontSize',myfontsize,'FontName','Times');
-        tmp = axis;
         text(1.25* numrepstest(2), 1.25 * wtest(2) / scale.beta, 'Stop to implement system');
         text(1.1*numrepstest(3), 0.5 * wtest(1) / scale.beta, 'Stop to implement system');
 mytitle = strcat(fName,'Fig1');
@@ -214,26 +209,24 @@ PDEUtilSaveFigEpsPdf( fignum, figdir, mytitle );
 g0 = 250000; % fixed cost of project
 u0 = 0.25; % time of project in years
 delayfactor = exp(-annualdisc * u0);
-c=1;
-wtest = (c/scale.discrate) * scale.beta;
-stest = PDEInvBound( upperDisc, wtest );
-numrepstest = 1 ./ (scale.gamma * stest);
+%c=1;
+%wtest = (c/scale.discrate) * scale.beta;
+%stest = PDEInvBound( upperDisc, wtest );
+%numrepstest = 1 ./ (scale.gamma * stest);
 
     for ijk = pdeSolnStruct.Header.StartFileVal:pdeSolnStruct.Header.EndFileVal
-        block = ijk;
- 
         svec = pdeSolnStruct.Data(ijk).svec;
         wvec = pdeSolnStruct.Data(ijk).wvec;
 
         upvec = pdeSolnStruct.Data(ijk).upvec;
-        downvec = pdeSolnStruct.Data(ijk).downvec;
-        up1 = pdeSolnStruct.Data(ijk).up1;
-        down1 = pdeSolnStruct.Data(ijk).down1;
+        %downvec = pdeSolnStruct.Data(ijk).downvec;
+        %up1 = pdeSolnStruct.Data(ijk).up1;
+        %down1 = pdeSolnStruct.Data(ijk).down1;
 
 %        Vvec = stopfunc(wvec(:),sval,PDEscale2,PDEparam2); % compute value of stopping immediately
         Bwsmatrix = pdeSolnStruct.Data(ijk).Bwsmatrix;
-        ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
-        EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
+        %ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
+        %EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
         Vvec = zeros(size(Bwsmatrix)); 
         stopnowval = wvec' * ones(1,length(svec));  % allocate space and put in default values
         for j=1:length(svec)
@@ -244,8 +237,8 @@ numrepstest = 1 ./ (scale.gamma * stest);
         
         eimprovement = abs( -g0 + delayfactor * Vvec / scale.beta - stopnowval / scale.beta);
         bigw = (length(wvec)-1)/2;
-        lowerindx = 0 * svec;  % allocate space to get lower and upper boundaries where one is indifferent between going forward and stopping.
-        upperindx = 0 * svec;
+        %lowerindx = 0 * svec;  % allocate space to get lower and upper boundaries where one is indifferent between going forward and stopping.
+        %upperindx = 0 * svec;
 %        for j=1:length(svec)
             [~, lowerindx] = min(eimprovement(1:(bigw+1),:));
             [~, upperindx] = min(eimprovement((bigw+1):(2*bigw+1),:));
@@ -255,14 +248,10 @@ numrepstest = 1 ./ (scale.gamma * stest);
         
         dw = wvec(2)-wvec(1);
 
-        maxup1 = max(up1);
-        maxupvec = max(upvec); 
-        maxwvec = max(wvec);
-
         % try to find some good contour values for the contour plot
         maxbnd = 1.1*max(upvec)/scale.beta;
         minV = 10^(floor(log10(2*maxbnd)))/4;
-        V = [ minV/5000 minV/1000 minV/200 minV/50 minV/10 minV/4 minV/2 minV:minV:(2*maxbnd) ];
+       % V = [ minV/5000 minV/1000 minV/200 minV/50 minV/10 minV/4 minV/2 minV:minV:(2*maxbnd) ];
      	V2 = [ 0 minV/200 minV/50 minV/10 minV/4 minV/2 minV:2*minV:(4*maxbnd) ];
 
         % First, plot a contour plot of the benefit (above 0) of continuing, plus a
@@ -329,10 +318,10 @@ numrepstest = 1 ./ (scale.gamma * stest);
     end 
 
     % extras
-    figout = PDEComparePDEboundApproxbound( fignum, pdeSoln );
+    fignum = PDEComparePDEboundApproxbound( fignum, pdeSoln );
     
-warning('not yet implemented: C&G 2009 Table 1');
-warning('not yet implemented: C&G 2009 Figure EC.1');
+disp('not yet implemented: C&G 2009 Table 1');
+disp('not yet implemented: C&G 2009 Figure EC.1');
 
 %%%%%%%%%%%%%%%%%%%%%%%%
     figout = fignum;

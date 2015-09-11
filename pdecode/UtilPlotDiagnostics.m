@@ -10,6 +10,8 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
     myfontsize=16;
     mysmallfontsize=14;
     points = 144*3; %spacing between labels on contours - made so that only one label appears per line
+    fracheight = 0.9;
+    square=true;
 
     % do a bit of input parameter checking
     figdir = cfSoln.Header.PDEparam.figdir;
@@ -74,6 +76,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
         tmp=axis;tmp(4)=1.2*max(max(up1),max(upvec));tmp(3)=1.2*min(min(down1),min(downvec));axis(tmp);
         xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
         title('Stdized E[value of continuing over stopping | (w_s, s)]','FontSize',myfontsize,'FontName','Times')
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         mytitle = strcat(figdir,fName,'FigContWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end
 
@@ -86,6 +89,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
         tmp=axis;tmp(4)=1.2*max(max(up1)/beta,max(upvec)/beta);tmp(3)=1.2*min(min(down1),min(downvec))/beta;axis(tmp);
         xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         title('E[value of continuing over stopping | (y_t/n_t, n_t)]','FontSize',myfontsize,'FontName','Times')
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         mytitle = strcat(figdir,fName,'FigContYT',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
@@ -105,6 +109,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
         tmp=axis;tmp(4)=1.2*max(max(up1),max(upvec));tmp(3)=1.2*min(min(down1),min(downvec));axis(tmp);
         xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
         title('Stopping boundaries in (w_s,s) scale','FontSize',myfontsize,'FontName','Times')
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         mytitle = strcat(figdir,fName,'FigContCPbias',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
@@ -123,6 +128,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
         tmp=axis;tmp(4)=1.2*max(max(-downvec),max(upvec))+dw;tmp(3)=0;axis(tmp);
         xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
         title('Compare upper bound with -lower bound, (w_s, s) coord','FontSize',myfontsize,'FontName','Times')
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         mytitle = strcat(figdir,fName,'FigDiffUpDownWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
@@ -139,6 +145,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
 %        xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('E[num samples | s]','FontSize',myfontsize,'FontName','Times')
         title('E[num samples] in (y_t/n_t,n_t) coords','FontSize',myfontsize,'FontName','Times')
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         mytitle = strcat(figdir,fName,'FigENYT',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
@@ -153,10 +160,11 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
 %        xlabel('Effective number of samples, n_t','FontSize',myfontsize,'FontName','Times'); ylabel('Posterior mean, y_t/n_t','FontSize',myfontsize,'FontName','Times')
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('1-E[PCS]','FontSize',myfontsize,'FontName','Times')
         title('1-E[PCS given (w, s)]','FontSize',myfontsize,'FontName','Times')
+        PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
         mytitle = strcat(figdir,fName,'FigEPCSWS',int2str(ijk),'.eps');
         if figsave print('-deps',mytitle); end	
 
-        WidthContinInw = upvec(end) - downvec(end)
+        WidthContinInw = (upvec(end) - downvec(end))/dw
         
         % plot value function as computed for same value of s on
         % consecutive plots
@@ -170,6 +178,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
             title(sprintf('Solution in two blocks at s=%f',svaltotest));
             legend('block j','block j+1');
             tmp=axis;tmp(1)=min(cfSoln.Data(ijk).down1(end))-dw;tmp(2)=max(cfSoln.Data(ijk).up1(end))+dw;axis(tmp);
+            PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
             mytitle = strcat(figdir,fName,'RippleCheckAbs',int2str(ijk),'.eps');
             if figsave print('-deps',mytitle); end	
 
@@ -181,6 +190,7 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
             title(sprintf('Solution in two blocks at s=%f',svaltotest));
             legend('relative error: block j - block j+1');
             tmp=axis;tmp(1)=min(cfSoln.Data(ijk).down1(end))-dw;tmp(2)=max(cfSoln.Data(ijk).up1(end))+dw;axis(tmp);
+            PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
             mytitle = strcat(figdir,fName,'RippleCheckRel',int2str(ijk),'.eps');
             if figsave print('-deps',mytitle); end	
         end
@@ -207,8 +217,9 @@ function [figout] = UtilPlotDiagnostics( fignum, cfSoln )
     tmp=axis;tmp(4)=1.2*max(max(10*dw,max(-downvec)),max(upvec));tmp(3)=0;axis(tmp);
     xlabel('Reverse time scale, s','FontSize',myfontsize,'FontName','Times'); ylabel('Scaled mean, w_s','FontSize',myfontsize,'FontName','Times')
     title('Compare upper bound with -lower bound, (w_s, s) coord','FontSize',myfontsize,'FontName','Times')
+    PDEUtilStdizeFigure( fignum, fracheight, mysmallfontsize, square );
     mytitle = strcat(figdir,fName,'FigDiffUpDownWS',int2str(ijk),'.eps');
     if figsave print('-deps',mytitle); end	
 
-    fignum = figout;
+    figout = fignum;
 end

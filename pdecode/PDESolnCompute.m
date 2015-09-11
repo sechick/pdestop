@@ -54,13 +54,13 @@ figsave = true;
 
 % create the directory for the figures if it does not exist already and the figures are
 % to be saved
-if ~isdir(figdir) & figsave
+if ~isdir(figdir) && figsave
     mkdir(figdir);
 end
 
 % copy some parameter values to local
 %alpha = PDEscale.alpha;
-beta = PDEscale.beta;
+%beta = PDEscale.beta;
 gamma = PDEscale.gamma;
 %kappainv = PDEscale.kappainv;
 termreward = PDEparam.termrewardfunc;   % this function should return the reward for stopping at the specified time
@@ -74,7 +74,7 @@ approxmeth = PDEparam.approxmethod;  % this function should return the best appr
 s0 = 1 / (gamma * PDEparam.t0);
 sEND = 1 / (gamma * PDEparam.tEND);
 
-mwig = beta * PDEparam.retire;
+%mwig = beta * PDEparam.retire;
 %muwig0 = beta*PDEparam.mu0;
 
 %%% Do some input validation
@@ -104,7 +104,7 @@ end
 
 myfontsize=16;
 mysmallfontsize=14;
-points = 144*3; %spacing between labels on contours - made so that only one label appears per line
+%points = 144*3; %spacing between labels on contours - made so that only one label appears per line
 
 % This code follows the idea of Chernoff & Petkau, and of Brezzi and Lai,
 % papers, except that we use a trinomial tree rather than binomial tree.
@@ -132,7 +132,7 @@ SAVEEVERY=350;        % every how many iterations do we keep the PDE values, for
 NUMSAVESPERITER=80;  % number of times we save the PDE values, for storage in matrix and files?
 Numds=SAVEEVERY*NUMSAVESPERITER;   % number of time steps per grid, % 8000 or 16000 for example, 
 FRACTOKEEP = 0.9; % use this to remember the state at some earlier time: 0.9 or 085 should get of ripples in many cases, make sure it is smaller than
-if (FRACTOKEEP > (1-2/SAVEEVERY)) | (FRACTOKEEP < 0.5)
+if (FRACTOKEEP > (1-2/SAVEEVERY)) || (FRACTOKEEP < 0.5)
     warning('keep FRACTOKEEP between 0.5 and 1 - 2/SAVEEVERY, please insure SAVEEVERY big enough');
 end
 myeps = 10^-10; %min(1,beta)*min(10^-12, ds/1000);    % a small value, for use in checking if things are close to 0 or not
@@ -157,7 +157,7 @@ if isa(approxmeth, 'function_handle')
     wmaxvec=approxmeth(smaxvec,PDEscale,PDEparam);      % approximate the maximum value of w for which the grid must account
     dwvec = dw*wpowvec;
     %dsvec = ds*spowvec;
-    ceilfactor=1.05; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
+    ceilfactor=1.1; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
     if isDisc   
         ceilfactor = 1.8; %2.25 %.5;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
     end
@@ -181,13 +181,6 @@ hifrac = 0; lowfrac = 1; % These will be used in diagnostics to see if ceilfacto
 
 % Set up the initial conditions for the recursions
 scur = sinit;
-
-if PDEparam.DoPlot
-    s0
-    sEND
-    scur
-    bigw
-end
 
 % vectors for value function
 [Cinitvec, sincrem] = rewardfunc(wvec,scur,PDEscale, PDEparam); % Approximation of value to go, given stopping at the discretized time sinit.
@@ -213,10 +206,8 @@ EPCSCin = EPCSCout;
 % For the CF code, the derivations should make this so it only needs to
 % loop the minimum number of times.
 if PDEparam.DoPlot
-    scur
-    dw
-    ds
-    middlecin1 = Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))
+    middlecin1 = Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)));
+    disp(middlecin1);
 end
 minindx=1; counter = 1;
 while minindx==1
@@ -250,7 +241,7 @@ while minindx==1
     ENCout(stopped) = 0;
     ENCin = ENCout; 
 
-    if (~PDEparam.finiteT) & (sout < sEND - 2*ds) % unless it is for finite horizon, force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the  initializaiton of the terminal condition
+    if (~PDEparam.finiteT) && (sout < sEND - 2*ds) % unless it is for finite horizon, force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the  initializaiton of the terminal condition
 %    if (counter < 20*PDEparam.precfactor)  % force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the initializaiton of the terminal condition
         minindx = 1;
     end % sEND
@@ -259,10 +250,12 @@ while minindx==1
     counter = counter + 1;
 end 
 if PDEparam.DoPlot
-    dw
-    bigw
-    scur
-    middlecin = Cin((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))-Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))
+    disp(dw);
+    disp(ds);
+    disp(bigw);
+    disp(scur);
+    middlecin = Cin((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))-Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)));
+    disp(middlecin);
 end
 
 % CHUNK3: Now that we have a point (w=0,s) that is in the continuation set, the
@@ -363,10 +356,10 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
 
     % if diagnostic plots are desired, plot them
     if PDEparam.DoPlot
-        dw
-        ds
-        hifrac
-        lowfrac
+        disp(dw);
+        disp(ds);
+        disp(hifrac);
+        disp(lowfrac);
         %        figure(180+ijk)
         if ~exist('fignum','var'), fignum = 20; end;
         fignum=fignum+1;figure(fignum);
@@ -379,7 +372,9 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('V(s,w)','FontSize',myfontsize,'FontName','Times')
         title('Value function in (w,s) coords','FontSize',myfontsize,'FontName','Times')
         mytitle = strcat(figdir,fName,'FigVWS',int2str(ijk),'.eps');
-        if figsave print('-deps',mytitle); end	
+        if figsave 
+            print('-deps',mytitle); 
+        end	
 
         if ~exist('fignum','var'), fignum = 20; end;
         fignum=fignum+1;figure(fignum);
@@ -394,8 +389,10 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         xlabel('wvec','FontSize',myfontsize,'FontName','Times'); ylabel('V(s,w)','FontSize',myfontsize,'FontName','Times')
         title('Value function in (w,s) coords','FontSize',myfontsize,'FontName','Times')
         mytitle = strcat(figdir,fName,'FigLogVWS',int2str(ijk),'.eps');
-        if figsave print('-deps',mytitle); end	
-        WidthContinInw = upvec(ind) - downvec(ind)
+        if figsave 
+            print('-deps',mytitle); 
+        end	
+        WidthContin = maxindx - minindx
     end  % diagnostic plot routines
 
     % double check boundaries to see if bias corrected bound exceeds max w

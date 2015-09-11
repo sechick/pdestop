@@ -2,9 +2,8 @@ function [ rval, figout, pdeSolnStruct ] = DoCFPlots( fignum, pdeSoln )
 
 % look in default location for base name of input files for discounted
 % reward case, otherwise use the argument passed to this function.
-rval = 0;               % assume failure to load unless loading is completed
-PDESolnStructure = [];  % default to empty solution structure
-[ST,I] = dbstack;
+%rval = 0;               % assume failure to load unless loading is completed
+[ST,~] = dbstack;
 routinename = ST.name;  % get function name
 
 if nargin < 1
@@ -20,7 +19,7 @@ else
 end
 
 if ~rval
-    warning(routinename, ': unable to open ',basename);
+    warning(routinename, ': unable to open ', basename);
 	return; 
 end
 
@@ -40,13 +39,13 @@ figsave = true;
 
 % create the directory for the figures if it does not exist already and the figures are
 % to be saved
-if ~isdir(figdir) & figsave
+if ~isdir(figdir) && figsave
     mkdir(figdir);
 end
 
-firsts = pdeSolnStruct.Header.firsts;
-lasts = pdeSolnStruct.Header.lasts;
-lasthelds = pdeSolnStruct.Header.lasthelds;
+%firsts = pdeSolnStruct.Header.firsts;
+%lasts = pdeSolnStruct.Header.lasts;
+%lasthelds = pdeSolnStruct.Header.lasthelds;
 fName = pdeSolnStruct.Header.fName;
 
 % for figure 3
@@ -54,49 +53,38 @@ PDEscale2.sigma = 1e5;
 PDEscale2.c = 1;
 PDEscale2.discrate = 0;
 PDEscale2.P = 0;
-PDEscaleout = PDEScaleStandardize(PDEscale2)
+PDEscaleout = PDEScaleStandardize(PDEscale2);
 PDEscale2 = PDEscaleout; % this convuluted code here to verify some pass by reference versus pass by value for matlab structures
 
-alpha = PDEscale2.alpha;
+%alpha = PDEscale2.alpha;
 beta = PDEscale2.beta;
 gamma = PDEscale2.gamma;
-approxmeth = PDEparam2.approxmethod;
+%approxmeth = PDEparam2.approxmethod;
 
 
 %% Generate plots similar to those in Chick & Frazier, 2012
 % First, figures in spirit of Fig 2 and Fig 3
     for ijk = pdeSolnStruct.Header.StartFileVal:pdeSolnStruct.Header.EndFileVal
-        block = ijk;
- 
         svec = pdeSolnStruct.Data(ijk).svec;
         wvec = pdeSolnStruct.Data(ijk).wvec;
 
         upvec = pdeSolnStruct.Data(ijk).upvec;
         downvec = pdeSolnStruct.Data(ijk).downvec;
-        up1 = pdeSolnStruct.Data(ijk).up1;
-        down1 = pdeSolnStruct.Data(ijk).down1;
+        %up1 = pdeSolnStruct.Data(ijk).up1;
+%        down1 = pdeSolnStruct.Data(ijk).down1;
 
 %        Vvec = stopfunc(wvec(:),sval,PDEscale2,pdeSoln.Header.PDEparam); % compute value of stopping immediately
         Bwsmatrix = pdeSolnStruct.Data(ijk).Bwsmatrix;
-        ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
-        EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
+%        ENwsmatrix = pdeSolnStruct.Data(ijk).ENwsmatrix;
+%        EPCSwsmatrix = pdeSolnStruct.Data(ijk).EPCSwsmatrix;
         Vvec = zeros(size(Bwsmatrix)); 
         for j=1:length(svec)
             vveccol  = PDEGetVals(pdeSolnStruct,wvec,svec(j)) ;
             Vvec(:,j) = vveccol;
         end
         
-        dw = wvec(2)-wvec(1);
+%        dw = wvec(2)-wvec(1);
 
-        maxup1 = max(up1);
-        maxupvec = max(upvec); 
-        maxwvec = max(wvec);
-
-        % try to find some good contour values for the contour plot
-        maxbnd = 1.1*max(upvec);
-        minV = 10^(floor(log10(2*maxbnd)))/4;
-        V = [ minV/5000 minV/1000 minV/200 minV/50 minV/10 minV/4 minV/2 minV:minV:(2*maxbnd) ];
-        
         % Plots similar to figure 2
         if ~exist('fignum','var'), fignum = 20; end;
         fignum=fignum+1;figure(fignum);
@@ -146,8 +134,8 @@ approxmeth = PDEparam2.approxmethod;
     % start to reconstruct the values for plotting....
     sbvec = pdeSoln.Computed.accumsvec;
     up = pdeSoln.Computed.accumupper;
-    lo = pdeSoln.Computed.accumlower;
-    findex = pdeSoln.Computed.fileindx;
+    %lo = pdeSoln.Computed.accumlower;
+    %findex = pdeSoln.Computed.fileindx;
 
     betastepvec=[1 4 10 40 100 400 1000];
     numbetas=length(betastepvec);
@@ -159,9 +147,10 @@ approxmeth = PDEparam2.approxmethod;
         tvec = 1/scale.gamma./sbvec;
         ytinit = ybndup1step(length(ybndup1step))*tvec(length(ybndup1step));
         betamatrix(j,:) = ytinit;
-        nrepslookahead=betastepvec(j)
+        nrepslookahead=betastepvec(j);
+        disp(nrepslookahead);
         for i=length(ybndup1step):-1:1
-            [ytinit, fval, exitflag]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*scale.c);
+            [ytinit, ~, ~]=fzero(@PsiNormRepsRoot,ytinit,optimset('TolX',1e-8),scale.sigma,tvec(i),nrepslookahead,nrepslookahead*scale.c);
             ybndup1step(i)=ytinit;
             ytinit=ytinit*0.99;
         end
@@ -202,7 +191,7 @@ approxmeth = PDEparam2.approxmethod;
     pdeSolnStructtmp.Header.PDEscale = PDEscale2;
     fignum = PDEComparePDEboundApproxbound( fignum, pdeSolnStructtmp );
 
-    warning('not yet implemented: C&F 2012 tables 1, 2, 3');
+    disp('not yet implemented: C&F 2012 tables 1, 2, 3');
 
 %%%%%%%%%%%%%%%%%%%%%%%%
     figout = fignum;

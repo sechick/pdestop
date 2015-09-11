@@ -1,4 +1,4 @@
-function [CGOff, CFOff, CGOn, CFOn] = PDECreateSolnFiles(fName, onflag, THoriz)
+function [cgSoln, cfSoln, cgOn, cfOn] = PDECreateSolnFiles(fDir, onflag, THoriz)
 % PDECreateSolnFiles: Solves free boundary problem in scaled coordinates for the
 % sequential sampling for simulation optimization. 
 %
@@ -6,8 +6,7 @@ function [CGOff, CFOff, CGOn, CFOn] = PDECreateSolnFiles(fName, onflag, THoriz)
 % structures PDEscale and PDEparam, please see TestSolvePDE.m.
 %
 % INPUTS: 
-%   fName: base name for files to hold the data structures with the
-%       solutions of the free boundary PDE.
+%   fDir: base name for directory to hold the files with the solutions to the several PDEs.
 %   onflag: if true, then online learning solutions are also created, if
 %       false, then only offline learning solutions are created.
 %   THoriz: set to positive, finite value if finite time horizon is desired, 
@@ -44,122 +43,189 @@ function [CGOff, CFOff, CGOn, CFOn] = PDECreateSolnFiles(fName, onflag, THoriz)
 % Created: 2015 08 17.
 
 if nargin < 1
-    fName = 'PDE-';
+    fDir = 'Matfiles\';
 end
 if nargin < 2
     onflag = false;  % default is to only generate files for offline learning
 end
+
 if nargin < 3
     THoriz = -1;    % default is to run infinite horizon analysis
 end
 
-sigma=1000;     % variance per single sample in (y,t) space
-m=0.0;         % value of retirement option in (y,t) space
-mu0=0.0;
-% ** Terminal reward functions: What is expected value of stopping at time
-% s with means in wvec
-basicstopfunc=@(wvec,s,p1,p2) max(wvec,0);   % this is valid terminal reward for discounted rewards, valued in time s currency
-% ** Approximate value to go function: 
-CFApproxValuefunc=@(wvec,s,p1,p2) PDECFApproxValue(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-CGApproxValuefunc=@(wvec,s,p1,p2) PDECGApproxValue(wvec,s,p1);   % this is valid terminal reward for discounted rewards, valued in time s currency
-upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
-upperDisc=@(s,p1,p2) CGApproxBoundW(s);
-
-PDEparam.online = false;% true if online learning is active, false otherwise
-PDEparam.retire = m;    % value of retirement option: ignored for discrate=0, taken to be alternative for discrate>0
-
 if THoriz <= 0;
-    PDEparam.finiteT = false; % by default, compute infinite horizon solution
+    finiteT = false; % by default, compute infinite horizon solution
 else
-    PDEparam.finiteT = true;
+    finiteT = true;
 end
 
-fileNameModifiers = {'Off', 'On'};
-if onflag
-    loopmax = 2;
-else % if online offline learning needed, set structure for online learning to empty structure
-    loopmax = 1;
-    CGOn=[];
-    CFOn=[];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set up generic functions for zero discounting,
+% these functions should return two vectors of the same size as wvec: the
+% first should be the expected reward at time s given wvec, the second
+% should be the expected number of samples to take additionally to achieve
+% it.
+% First set things up for offline learning, then do online learning files
+% if needed.
+
+generictermreward=@(wvec,s,p1,p2) PDEsimplereward(wvec);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1 };
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                               %% 
+%%       Create functions for use with zero discounting          %%   offline case
+%%                                                               %% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+CFApproxValuefunc=@(wvec,s,p1,p2) PDECFApproxValue(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
+CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
+if finiteT
+    CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
+    CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'BaseFileName', 'CF' , 'matdir' , 'Matfiles\', 'finiteT', finiteT  };
+else
+    CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
+    CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'BaseFileName', 'CF' , 'matdir' , 'Matfiles\', 'finiteT', finiteT  };
+    %figdir Figure\,  UnkVariance 0
+end
+scalevec = CFscalevec; 
+paramvec = [CFparamvec, CFfunctionset, baseparams];
+[scale, param] = PDEInputConstructor( scalevec, paramvec );
+[scale, param] = PDEInputValidator( scale, param )
+s0 = 1/(scale.gamma * param.t0)
+sEND = 1/(scale.gamma * param.tEND)
+tic
+[rval, MAXFiles] = PDESolnCompute(scale, param);
+% Load in the data structures form those computations
+toc
+BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+%[rval, cfSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+[rval, cfSoln] = PDESolnLoad(BaseFileName); % by default load all subgroups
+if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    if ~exist('fignum','var'), fignum = 20; end;
+    fignum = UtilPlotDiagnostics(fignum, cfSoln);           % generate a bunch of plots which can be used as diagnostics of computations
+    [ rval, fignum, ~ ] = DoCFPlots( fignum, cfSoln );      % generate plots from Chick & Frazier (2012)
+    % alternatively, DoCGPlots can take a string, or can be left blank to load
+    % in files in the default location
+    %[ rval, fignum, cfSoln ] = DoCFPlots( fignum, 'Matfiles\CF' );
+    %[ rval, fignum, cfSoln ] = DoCFPlots( fignum );
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                               %% 
+%%     Create functions for use with positive discounting        %%  offline case
+%%                                                               %% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for i=1:loopmax
-    currentSuffix = fileNameModifiers(i);
-    baseName = sprintf('%s%s',fName,currentSuffix{:});
-    if PDEparam.finiteT 
-        baseName = [baseName 'Fin'];
+% Set up generic functions for positive discounting
+CGApproxValuefunc=@(wvec,s,p1,p2) PDECGApproxValue(wvec,s,p1);   % this is valid terminal reward for discounted rewards, valued in time s currency
+upperDisc=@(s,p1,p2) CGApproxBoundW(s);
+CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
+if finiteT
+    CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
+    CGparamvec = { 't0', 0.002, 'tEND', THoriz, 'precfactor', 8, 'BaseFileName', 'CG' , 'matdir' , 'Matfiles\'};
+else
+    CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
+    CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'BaseFileName', 'CG' , 'matdir' , 'Matfiles\'};
+    %figdir Figure\,  UnkVariance 0
+end
+
+scalevec = CGscalevec; 
+paramvec = [CGparamvec, CGfunctionset, baseparams];
+[scale, param] = PDEInputConstructor( scalevec, paramvec );
+[scale, param] = PDEInputValidator( scale, param )
+tic
+[rval, MAXFiles] = PDESolnCompute(scale, param);
+toc
+% Load in the data structures form those computations
+BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+%[rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+[rval, cgSoln] = PDESolnLoad(BaseFileName);
+if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+    if ~exist('fignum','var'), fignum = 20; end;
+    fignum = UtilPlotDiagnostics(fignum, cgSoln);
+    [ rval, fignum, ~ ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
+    % alternatively, DoCGPlots can take a string, or can be left blank to load
+    % in files in the default location
+    %[ rval, fignum, cgSoln ] = DoCGPlots( fignum, 'Matfiles\CG' );
+    %[ rval, fignum, cgSoln ] = DoCGPlots( fignum );
+end
+
+%%%%%%%%%%%%%%
+
+if ~onflag   % online files not requested
+    cgOn = [];
+    cfOn = [];
+else         % online files are requested
+        % do first online with zero discounting
+    % Online with zero discounting is not ok unless time horizon is finite
+    if finiteT
+        CFApproxValuefunc=@(wvec,s,p1,p2) PDECFApproxValue(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+        upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
+        CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
+%        if finiteT
+            CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
+            CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'BaseFileName', 'CFOn' , 'matdir' , 'Matfiles\', 'finiteT', finiteT  };
+%        else
+%            CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
+%            CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'BaseFileName', 'CFOn' , 'matdir' , 'Matfiles\', 'finiteT', finiteT  };
+%            %figdir Figure\,  UnkVariance 0
+%        end
+        scalevec = CFscalevec; 
+        paramvec = [CFparamvec, CFfunctionset, baseparams];
+        [scale, param] = PDEInputConstructor( scalevec, paramvec );
+        [scale, param] = PDEInputValidator( scale, param )
+        s0 = 1/(scale.gamma * param.t0)
+        sEND = 1/(scale.gamma * param.tEND)
+        tic
+        [rval, MAXFiles] = PDESolnCompute(scale, param);
+        % Load in the data structures form those computations
+        toc
+        BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+        %[rval, cfOn] = PDESolnLoad(BaseFileName,1,MAXFiles);
+        [rval, cfOn] = PDESolnLoad(BaseFileName); % by default load all subgroups
+        if cfOn.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+            if ~exist('fignum','var'), fignum = 20; end;
+            fignum = UtilPlotDiagnostics(fignum, cfOn);           % generate a bunch of plots which can be used as diagnostics of computations
+            [ rval, fignum, ~ ] = DoCFPlots( fignum, cfOn );      % generate plots from Chick & Frazier (2012)
+        end
     end
-    PDEparam.online = (i > 1);
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % first do the case of zero discount rate
-    c=1;         % cost per single sample in (y,t) space
-    discrate = 0.00;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-    t0=0.01;%0.25; %.25
-    if THoriz > 0
-        tEND = max(2*t0, THoriz);   % make sure there is a nonempty range
+
+    % now turn to discounted version: online is ok for both finite and
+    % infinite horizon
+    % Set up generic functions for positive discounting
+    CGApproxValuefunc=@(wvec,s,p1,p2) PDECGApproxValue(wvec,s,p1);   % this is valid terminal reward for discounted rewards, valued in time s currency
+    upperDisc=@(s,p1,p2) CGApproxBoundW(s);
+    CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
+    if finiteT
+        CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
+        CGparamvec = { 't0', 0.002, 'tEND', THoriz, 'precfactor', 8, 'BaseFileName', 'CGOn' , 'matdir' , 'Matfiles\'};
     else
-        tEND = 1000;  %5000
+        CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
+        CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'BaseFileName', 'CGOn' , 'matdir' , 'Matfiles\'};
+        %figdir Figure\,  UnkVariance 0
+    end
+
+    scalevec = CGscalevec; 
+    paramvec = [CGparamvec, CGfunctionset, baseparams];
+    [scale, param] = PDEInputConstructor( scalevec, paramvec );
+    [scale, param] = PDEInputValidator( scale, param )
+    tic
+    [rval, MAXFiles] = PDESolnCompute(scale, param);
+    toc
+    % Load in the data structures form those computations
+    BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
+    %[rval, cgSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+    [rval, cgSoln] = PDESolnLoad(BaseFileName);
+    if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+        if ~exist('fignum','var'), fignum = 20; end;
+        fignum = UtilPlotDiagnostics(fignum, cgSoln);
+        [ rval, fignum, ~ ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
     end
         
-    PDEscale.c=c;           % cost per single sample in (y,t) space
-    PDEscale.sigma=sigma;	% standard deviation of a single sample in (y,t) space
-    PDEscale.P=1;           % multiplier times the mean reward for the adoption decision
-    PDEscale.discrate = discrate;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-    PDEscale = PDEScaleStandardize(PDEscale);    % compute alpha, beta, gamma, kappainv for this problem
+end
 
-   
-    PDEparam.BaseFileName = ['CF' baseName];      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-    PDEparam.t0 = t0;      % lower range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-    PDEparam.tEND = tEND;  % upper range of values of t0 to compute, where unknown mean W ~ Normal(mu0, sigma^2/t0)
-    PDEparam.termrewardfunc = basicstopfunc;
-    PDEparam.approxvaluefunc = CFApproxValuefunc ;
-    PDEparam.approxmethod = upperNoDisc;
-    PDEparam.precfactor = 10.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
-    PDEparam.DoPlot = true;       % true to turn on diagnostic plots
-
-    tic
-    [rval, MAXFiles] = PDESolnCompute(PDEscale, PDEparam);
-    if i==1
-        [rval, CFOff] = PDESolnLoad(BaseNameFile,1,MAXFiles);
-    else
-        [rval, CFOn] = PDESolnLoad(BaseNameFile,1,MAXFiles);
-    end
-    toc
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % now do the [positive discount rate
-    c=0;
-    discrate = 0.001;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-    t0=1;%0.25; %.25
-    if THoriz > 0
-        tEND = max(2*t0, THoriz);   % make sure there is a nonempty range
-    else
-        tEND = 1000;  %5000
-    end
-    
-    PDEscale.c=c;           % cost per single sample in (y,t) space
-    PDEscale.sigma=sigma;	% standard deviation of a single sample in (y,t) space
-    PDEscale.P=1;           % multiplier times the mean reward for the adoption decision
-    PDEscale.discrate = discrate;% zero discount rate per sample for C&F paper (use >0 for C&G paper)
-    PDEscale = PDEScaleStandardize(PDEscale);    % compute alpha, beta, gamma, kappainv for this problem
-
-    BaseNameFile=['CG' baseName];
-    PDEparam.termrewardfunc = basicstopfunc;
-    PDEparam.approxvaluefunc = CGApproxValuefunc;
-    PDEparam.approxmethod = upperDisc;
-    PDEparam.precfactor = 6.0;	% increase to increase the precision of the 'dw' grid in normed coordinates. must be at least 1.0.
-    PDEparam.DoPlot = true;       % true to turn on diagnostic plots
-
-    tic
-    [rval, MAXFiles] = PDESolnCompute(BaseNameFile, PDEscale, PDEparam);
-    if i==1
-        [rval, CGOff] = PDESolnLoad(BaseNameFile,1,MAXFiles);
-    else
-        [rval, CGOn] = PDESolnLoad(BaseNameFile,1,MAXFiles);
-    end
-    toc
 
 end
