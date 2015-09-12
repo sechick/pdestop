@@ -20,11 +20,13 @@ The code can be used to produce all graphs with PDE computations in the above pa
 1. Make a local copy of the repo.
 2. Launch Matlab and change your directory to the root directory of this code, where PDELocalSetPaths.m is stored.
 3. Run PDELocalSetPaths.m to perform some initializations for the path variables.
-4. Edit TestSolvePDE.m, and cut/paste chunks of code into the Matlab brower.
+4. Edit SolvePlotCFCG.m, and cut/paste chunks of code into the Matlab browser.
    - One first generates two sets of files with the solutions for standardized versions of the sequential sampling problems, CF<n>.mat for undiscounted problems, and CG<n>.mat for problems with positive discount rates. Each of these two sets of files can take up approximately 20-30Mb of hard drive space (and are stored in Matfile\). These need be produced only once. They take about 3 min each to generate with a Fujitsu T902 tablet with quad core and 2.6MHz chip.
    - Then, one can load in the solutions with the function PDESolnLoad, in order to approximate the solutions for problems with your parameter values, as functions of the stored solutions for the standardized versions of the sequential sampling problems.
 
-TestSolvePDE.m gives such examples, and in fact the files DoCGPlots() and DoCFPlots() can be used to produce graphs like those in the papers listed above.
+SolvePlotCFCG.m gives such examples. The files DoCGPlots() and DoCFPlots() can be used to produce graphs like those in the papers listed above.
+
+
 
 For future work:
 1. Online learning for both discounted and undiscounted rewards.

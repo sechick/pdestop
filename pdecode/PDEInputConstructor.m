@@ -29,6 +29,8 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
 % Last touched: 2015 Aug 21
 % 
 
+PDELocalInit;
+
     % check if inputs were passed
     if nargin < 2
         paramarray = {};
@@ -68,8 +70,8 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
                                 % discount rate is positive (as in C&G)
     pdeparam.precfactor = 5;    % intended to be minimum number of grid points between 0 and upper bound of continuation set. should be min 2, bigger for finer grid
     pdeparam.DoPlot = true;     % true if diagnostic plots/text to be output during computations of pde
-    pdeparam.figdir = 'Figure\';% directory name for figures to be output
-    pdeparam.matdir = 'Matfiles\'; % directory name for storing .mat files with pde solutions
+    pdeparam.figdir = PDEfigfilebase; %'Figure\';% directory name for figures to be output
+    pdeparam.matdir = PDEmatfilebase; %'Matfiles\'; % directory name for storing .mat files with pde solutions
 
     % At present the following are declared but are not yet supported. not
     % needed for pde calculations, but might be useful for monte carlo at a
@@ -90,7 +92,7 @@ function [ pdescale, pdeparam ] = PDEInputConstructor( scalearray, paramarray  )
 %     pdeparam.UnkVarianceShape = -1.0; % Ignored for the moment. Might later be used for fudge factor for boundary
 
     pdeparam.fixedP = true; % set to true if expected reward on stopping is for P * expected reward per patient, false if patients not tested due to early stopping can also benefit from better alterantive
-
+    
     [rval, pdescale2, pdeparam2] = PDEInputModifier(pdescale, pdeparam, scalearray, paramarray);
 
     if ~isfield(pdeparam2,'BaseFileName') % if no file name was passed, then come up with a default name based on discount rate value

@@ -392,7 +392,7 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         if figsave 
             print('-deps',mytitle); 
         end	
-        WidthContin = maxindx - minindx
+        WidthContin(ijk) = maxindx - minindx;
     end  % diagnostic plot routines
 
     % double check boundaries to see if bias corrected bound exceeds max w
@@ -447,6 +447,6 @@ StartFileVal = 1;           % lower index of valid file values
 EndFileVal = numfiles;      % upper index of valid file values
 TimeStamp = clock;
 mymat = strcat(matdir,fName,int2str(ijk),'.mat');
-save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac');
+save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac','WidthContin');
 
 end

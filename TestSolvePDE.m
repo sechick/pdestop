@@ -8,12 +8,24 @@
 %Normal(A,\sigma^2), and prior on A ~ Normal(\mu_0, \sigma_0^2), and
 %further t_0 = \sigma^2 / \sigma_0^2.
 
-fDir = 'Matfiles\';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                               %% 
+%%     SETUP:To be called every time.
+%%                                                               %% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PDELocalSetPaths(); % set up paths to PDE package
+PDELocalInit;       % set up some variables (all starting with PDE - avoid variables with such names
+
 onflag = false;
 THoriz = -1;    % set to below 0 for infinite horizon
-[cgSoln, cfSoln, cgOn, cfOn] = PDECreateSolnFiles(fDir, onflag, THoriz);
 
+%%%%% NOTE: See also TSolvePlotCFCG.m, which gives function calls to create
+%%%%% solution files automatically for C&F and C&G offline. In what
+%%%%% follows, we have a 'less automated' but perhaps more flexible set of
+%%%%% code for achieving similar things, or adapted things.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Set up generic functions for zero discounting,
 % these functions should return two vectors of the same size as wvec: the
@@ -71,7 +83,7 @@ if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps
     [ rval, fignum, ~ ] = DoCFPlots( fignum, cfSoln );      % generate plots from Chick & Frazier (2012)
     % alternatively, DoCGPlots can take a string, or can be left blank to load
     % in files in the default location
-    %[ rval, fignum, cfSoln ] = DoCFPlots( fignum, 'Matfiles\CF' );
+    %[ rval, fignum, cfSoln ] = DoCFPlots( fignum, [PDEmatfilebase PDEnodiscbase] );
     %[ rval, fignum, cfSoln ] = DoCFPlots( fignum );
 end
 
@@ -110,7 +122,7 @@ if cgSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps
     [ rval, fignum, ~ ] = DoCGPlots( fignum, cgSoln ); % can pass with only one argument, in which case Matfiles\CG0.mat is checked for loading in pde solution
     % alternatively, DoCGPlots can take a string, or can be left blank to load
     % in files in the default location
-    %[ rval, fignum, cgSoln ] = DoCGPlots( fignum, 'Matfiles\CG' );
+    %[ rval, fignum, cgSoln ] = DoCGPlots( fignum, [PDEmatfilebase PDEdiscbase] );
     %[ rval, fignum, cgSoln ] = DoCGPlots( fignum );
 end
 
@@ -176,9 +188,6 @@ if GuessSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the 
     if ~exist('fignum','var'), fignum = 20; end;
     fignum = UtilPlotDiagnostics(fignum,GuessSoln);
 end
-
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% OLD STUFF %%%%%%%%%%%%%%%%%%%%%%

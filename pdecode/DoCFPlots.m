@@ -6,8 +6,9 @@ function [ rval, figout, pdeSolnStruct ] = DoCFPlots( fignum, pdeSoln )
 [ST,~] = dbstack;
 routinename = ST.name;  % get function name
 
+PDELocalInit;
 if nargin < 1
-    basename = 'Matfiles\CF';   % give location
+    basename = [PDEmatfilebase PDEnodiscbase];   % give location
     [rval, pdeSolnStruct] = PDESolnLoad(basename);
 elseif isstruct(pdeSoln)
     pdeSolnStruct = pdeSoln;

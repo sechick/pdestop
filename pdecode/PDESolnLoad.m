@@ -1,6 +1,7 @@
 function [rval, PDESolnStructure] = PDESolnLoad(B1filestring, filestart, fileend)
-% PURPOSE: 
-%   Load in the data from files in order to have estimates of tgit he
+% PURPOSE: Loads in data for a single instance of the optimal stopping
+% problem.
+%   Load in the data from files in order to have estimates of the
 %   standardized optimal expected dynamic reward (OEDR) for the Bandit 
 %   papers.  These files can then be used in sequential sampling
 %   optimization routines, such as those of the following papers:

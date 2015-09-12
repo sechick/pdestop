@@ -13,19 +13,31 @@
 % first should be the expected reward at time s given wvec, the second
 % should be the expected number of samples to take additionally to achieve
 % it.
+
+PDELocalInit;
+
 DelayOfflineReward=@(wvec,s,p1,p2) DelayOfflineSimpleReward(wvec,s,p1,p2);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-DelayOffApproxV=@(wvec,s,p1,p2) DelayNodiscOffApproxV(wvec,s,p1);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
+DelayOffApproxV=@(wvec,s,p1,p2) DelayNodiscOffApproxV(wvec,s,p1,p2);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOffApproxV, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOfflineReward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 
 % Put in data for solution for Stent example
+annualratepatients = 907;
 tauval = 907;
-StentScale = {'c', 200, 'sigma', 17538, 'discrate', 0, 'P', 2e6, 'tau', tauval };
-StentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
+Stentt0 = 20;
+StentMaxSamps = 2000;
+annualdiscrate = .10;
+perpatientdiscrate = annualdiscrate / annualratepatients;
+adoptionsize = 2e6;
+samplecost = 200;
+samplestdev = 17538;
+
+% Try first when there is zero discount rate
+StentScale = {'c', samplecost, 'sigma', samplestdev, 'discrate', 0, 'P', adoptionsize, 'tau', tauval };
+StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 6, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
-
 scalevec = StentScale; 
 paramvec = [StentParam, DelayNodiscOffFuncset, baseparams];
 [scale, param] = PDEInputConstructor( scalevec, paramvec );
@@ -98,7 +110,7 @@ if ~exist('fignum','var'), fignum = 20; end;
 s0 = 1/(scale.gamma*param.t0)
 sEND = 1/(scale.gamma*param.tEND)
 Icost = 0;
-[rval, cgSoln] = PDESolnLoad('Matfiles\CG',1,6);
+[rval, cgSoln] = PDESolnLoad([PDEmatfilebase PDEdiscbase],1,6);
 [ Vvec, Bwsval, ENvec, PCSvec ] = PDEGetVals(cgSoln,wvec - beta*Icost / scale.P + beta*scale.c / (scale.P * scale.discrate),s0) 
 [ Vvec, Bwsval, ENvec, PCSvec ] = PDEGetVals(cgdSoln,wvec - beta*Icost / scale.P + beta*scale.c / (scale.P * scale.discrate),s0) 
 Vvec = scale.P * Vvec / beta - scale.c/scale.discrate;
