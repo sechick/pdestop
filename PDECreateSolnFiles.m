@@ -77,10 +77,10 @@ upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
 if finiteT
     CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
-    CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+    CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'ceilfactor', 1.1, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
 else
     CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
-    CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+    CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'ceilfactor', 1.1, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
     %figdir Figure\,  UnkVariance 0
 end
 scalevec = CFscalevec; 
@@ -106,10 +106,10 @@ upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
 if finiteT
     CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
-    CGparamvec = { 't0', 0.002, 'tEND', THoriz, 'precfactor', 8, 'BaseFileName', [PDEdiscbase PDEoffbase] , 'matdir' , PDEmatfilebase};
+    CGparamvec = { 't0', 0.002, 'tEND', THoriz, 'precfactor', 8, 'ceilfactor', 1.8, 'BaseFileName', [PDEdiscbase PDEoffbase] , 'matdir' , PDEmatfilebase};
 else
     CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
-    CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'BaseFileName', [PDEdiscbase PDEoffbase] , 'matdir' , PDEmatfilebase};
+    CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'ceilfactor', 1.8, 'BaseFileName', [PDEdiscbase PDEoffbase] , 'matdir' , PDEmatfilebase};
     %figdir Figure\,  UnkVariance 0
 end
 
@@ -131,15 +131,15 @@ if onflag   % online files are requested
     CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
 	if finiteT
         CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
-        CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+        CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'ceilfactor', 1.5, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
     else
         param.tEND = 1000 + param.t0;
         THoriz = param.tEND;
         warning('online learning requested for infinite horizon without discounting: not allowed -- try discounting or finite horizon: here, assuming finite horizon with Thoriz = %d',tHoriz);
         CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 %        CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
-        CFparamvec = { 't0', param.t0, 'tEND', THoriz, 'precfactor', 10, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
-%        CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+        CFparamvec = { 't0', param.t0, 'tEND', THoriz, 'precfactor', 10, 'ceilfactor', 1.5, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+%        CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'ceilfactor', 1.5, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
         %figdir Figure\,  UnkVariance 0
     end
     scalevec = CFscalevec; 
@@ -161,10 +161,10 @@ if onflag   % online files are requested
     CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
     if finiteT
         CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
-        CGparamvec = { 't0', 0.002, 'tEND', THoriz, 'precfactor', 8, 'BaseFileName', [PDEdiscbase PDEonbase] , 'matdir' , PDEmatfilebase};
+        CGparamvec = { 't0', 0.002, 'tEND', THoriz, 'precfactor', 8, 'ceilfactor', 2.0, 'BaseFileName', [PDEdiscbase PDEonbase] , 'matdir' , PDEmatfilebase};
     else
         CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
-        CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'BaseFileName', [PDEdiscbase PDEonbase] , 'matdir' , PDEmatfilebase};
+        CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'ceilfactor', 2.0, 'BaseFileName', [PDEdiscbase PDEonbase] , 'matdir' , PDEmatfilebase};
         %figdir Figure\,  UnkVariance 0
     end
 

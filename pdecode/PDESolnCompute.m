@@ -157,10 +157,7 @@ if isa(approxmeth, 'function_handle')
     wmaxvec=approxmeth(smaxvec,PDEscale,PDEparam);      % approximate the maximum value of w for which the grid must account
     dwvec = dw*wpowvec;
     %dsvec = ds*spowvec;
-    ceilfactor=1.1; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
-    if isDisc   
-        ceilfactor = 1.8; %2.25 %.5;   % make fudge factor bigger for discounted case, as the range for a lower boundary is wider...
-    end
+    ceilfactor=PDEparam.ceilfactor; % multiple by 4 because of granularity and fact that we are not checking all points for (s, b(s)), just those at grid size changes
     ratiovec = wmaxvec ./ dwvec;    % figure roughly how many dw from 0 to upper boundary...
     bigw = ceil(ceilfactor*max(ratiovec)); % hit that figure with a multiplier in order to make sure there is a margin of error, especially below boundary
 else  % if we don't have a function to compute, approximately, the upper stopping boundary, then take it from user specified input
@@ -206,7 +203,7 @@ EPCSCin = EPCSCout;
 % For the CF code, the derivations should make this so it only needs to
 % loop the minimum number of times.
 if PDEparam.DoPlot
-    middlecin1 = Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)));
+    middlecin1 = Cinitvec((bigw-4):(bigw+5))-max(0,wvec((bigw-4):(bigw+5)));
     disp(middlecin1);
 end
 minindx=1; counter = 1;
@@ -216,11 +213,17 @@ while minindx==1
     Cinitvec = termreward(wvec,sout,PDEscale, PDEparam);  % compute reward from stopping
     if ~isDisc % for undiscounted rewards, do the update, noting that the top and bottom can be 'tied' to be 'stopped' 
         Cout(2:(wvsize-1)) = ( Cin(1:(wvsize-2)) + Cin(2:(wvsize-1)) + Cin(3:wvsize)) / 3  - (1/scur-1/sout);
+        if ~isOffline   % if there is online learning, add a term to that effect
+            Cout(2:(wvsize-1)) = Cout(2:(wvsize-1)) + (1/scur-1/sout) * wvec(2:(wvsize-1));
+        end
         Cout(1) = Cinitvec(1);              % following conditions in sure stopping at top and at bottom of vector
         Cout(wvsize) = Cinitvec(wvsize);
     else  % with discounting, it might be possible to have no lower stopping region, therefore we need to handle the update for Cout(1) in special way
         % we use a surrogate for the reward of doing dw below the stopping boundary... 
         Cout(2:(wvsize-1)) =  exp(- (1/scur-1/sout)) * ( Cin(1:(wvsize-2)) + Cin(2:(wvsize-1)) + Cin(3:wvsize)) / 3 ;
+        if ~isOffline   % if there is online learning, add a term to that effect
+            Cout(2:(wvsize-1)) = Cout(2:(wvsize-1)) + (1-exp(-(1/scur-1/sout))) * wvec(2:(wvsize-1));
+        end
         Cout(1) = exp(- (1/scur-1/sout)) * (termreward(min(wvec)-dw,sout,PDEscale, PDEparam) + Cin(1) + Cin(2) ) / 3 ;   % following conditions in sure stopping at top and at bottom of vector
         Cout(wvsize) = Cinitvec(wvsize);
     end
@@ -254,7 +257,7 @@ if PDEparam.DoPlot
     disp(ds);
     disp(bigw);
     disp(scur);
-    middlecin = Cin((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)))-Cinitvec((bigw-4):(bigw+4))-max(0,wvec((bigw-4):(bigw+4)));
+    middlecin = Cin((bigw-4):(bigw+5))-max(0,wvec((bigw-4):(bigw+5)))-Cinitvec((bigw-4):(bigw+5))-max(0,wvec((bigw-4):(bigw+5)));
     disp(middlecin);
 end
 
@@ -399,7 +402,7 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     % value in calculation or not. if there is an error here, then need to
     % set bigw to a larger value
     if max(max(up1),max(up1)) >= max(wvec) % also put -down1?
-        error('error: need bigger initial number of grid points for w direction');
+        warning('error: need bigger initial number of grid points for w direction');
         return;
     end
 

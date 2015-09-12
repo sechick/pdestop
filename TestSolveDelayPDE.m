@@ -17,9 +17,7 @@
 PDELocalInit;
 
 DelayOfflineReward=@(wvec,s,p1,p2) DelayOfflineSimpleReward(wvec,s,p1,p2);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
-DelayOffApproxV=@(wvec,s,p1,p2) DelayNodiscOffApproxV(wvec,s,p1,p2);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
 upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
-DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOffApproxV, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 DelayNodiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOfflineReward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 
 % Put in data for solution for Stent example
@@ -35,7 +33,7 @@ samplestdev = 17538;
 
 % Try first when there is zero discount rate
 StentScale = {'c', samplecost, 'sigma', samplestdev, 'discrate', 0, 'P', adoptionsize, 'tau', tauval };
-StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 6, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
+StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 8, 'ceilfactor', 2.0, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 scalevec = StentScale; 
@@ -85,7 +83,7 @@ DelayDiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', 
 DelayDiscOffFuncset = {'termrewardfunc', DelayOfflineReward, 'approxvaluefunc', DelayOfflineReward, 'approxmethod', upperDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 tauval = 907;
 DStentScale = {'c', 200, 'sigma', 17538, 'discrate', 0.01, 'P', 2e6, 'tau', tauval };
-DStentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'BaseFileName', sprintf('DelDisOffTau%d',tauval) };
+DStentParam = { 't0', 20, 'tEND', 2000, 'precfactor', 6, 'ceilfactor', 1.8, 'BaseFileName', sprintf('DelDisOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 

@@ -68,7 +68,8 @@ PDELocalInit;
                                 % discount rate is 0 (as in C&F), but is 
                                 % used as the 'best alternative' if
                                 % discount rate is positive (as in C&G)
-    pdeparam.precfactor = 5;    % intended to be minimum number of grid points between 0 and upper bound of continuation set. should be min 2, bigger for finer grid
+    pdeparam.ceilfactor = 1.1;  % controls width in w-scale for grid. Should be at least 1.1 for c>0 case, and at least 1.8 for disc > 0 case (in offline case) and bigger for online case
+    pdeparam.precfactor = 7;    % intended to be minimum number of grid points between 0 and upper bound of continuation set. should be min 2, bigger for finer grid
     pdeparam.DoPlot = true;     % true if diagnostic plots/text to be output during computations of pde
     pdeparam.figdir = PDEfigfilebase; %'Figure\';% directory name for figures to be output
     pdeparam.matdir = PDEmatfilebase; %'Matfiles\'; % directory name for storing .mat files with pde solutions

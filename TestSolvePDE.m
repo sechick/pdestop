@@ -40,7 +40,7 @@ upperNoDisc=@(s,p1,p2) CFApproxBoundW(s);
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
 CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 CFscalevec = {'c', 1, 'sigma', 10e5, 'discrate', 0, 'P', 1};
-CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'BaseFileName', 'CF' };
+CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'ceilfactor', 1.1, 'BaseFileName', 'CF' };
 %figdir Figure\, matdir Matfiles\ UnkVariance 0
 
 % Set up generic functions for positive discounting
@@ -49,7 +49,7 @@ upperDisc=@(s,p1,p2) CGApproxBoundW(s);
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperDisc};
 CGfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CGApproxValuefunc, 'approxmethod', upperDisc};
 CGscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0002, 'P', 1 };
-CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'BaseFileName', 'CG' };
+CGparamvec = { 't0', 0.002, 'tEND', 400000, 'precfactor', 8, 'ceilfactor', 1.8, 'BaseFileName', 'CG' };
 
 % generic functions when the 'guesses' are still being made regarding the
 % upper boundary's approximate value.
@@ -57,7 +57,7 @@ Guessdw=0.06; GuessNumW=1500; % these specific values are appropriate for case o
 upperguessNoClue = [Guessdw GuessNumW]; % guesses for initial dw size, and for number of grid points above and below 0
 Guessfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperguessNoClue};
 Guessscalevec = {'c', 0, 'sigma', 10e5, 'discrate', 0.0001, 'P', 1 };
-Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 6, 'BaseFileName', 'Guess' };
+Guessparamvec = { 't0', 1, 'tEND', 20000, 'precfactor', 6, 'ceilfactor', 3.0, 'BaseFileName', 'Guess' };
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%                                                               %% 
