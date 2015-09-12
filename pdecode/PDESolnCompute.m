@@ -403,7 +403,7 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     % set bigw to a larger value
     if max(max(up1),max(up1)) >= max(wvec) % also put -down1?
         warning('error: need bigger initial number of grid points for w direction');
-        return;
+%        return;
     end
 
     %   now reset the ds and dw values to scale up an order of magnitude

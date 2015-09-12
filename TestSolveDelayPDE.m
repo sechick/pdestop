@@ -32,8 +32,8 @@ samplecost = 200;
 samplestdev = 17538;
 
 % Try first when there is zero discount rate
-StentScale = {'c', samplecost, 'sigma', samplestdev, 'discrate', 0, 'P', adoptionsize, 'tau', tauval };
-StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 8, 'ceilfactor', 2.0, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
+StentScale = {'c', samplecost/adoptionsize, 'sigma', samplestdev, 'discrate', 0, 'P', 1, 'tau', tauval };
+StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 50, 'ceilfactor', 2.2, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 scalevec = StentScale; 
