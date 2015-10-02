@@ -14,6 +14,7 @@
 % should be the expected number of samples to take additionally to achieve
 % it.
 
+PDELocalSetPaths;
 PDELocalInit;
 
 DelayOfflineReward=@(wvec,s,p1,p2) DelayOfflineSimpleReward(wvec,s,p1,p2);   % this is valid terminal reward for undiscounted rewards, valued in time s currency
@@ -33,7 +34,7 @@ samplestdev = 17538;
 
 % Try first when there is zero discount rate
 StentScale = {'c', samplecost/adoptionsize, 'sigma', samplestdev, 'discrate', 0, 'P', 1, 'tau', tauval };
-StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 50, 'ceilfactor', 2.2, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
+StentParam = { 't0', Stentt0, 'tEND', Stentt0+StentMaxSamps, 'precfactor', 200, 'ceilfactor', 2.2, 'BaseFileName', sprintf('StentOffTau%d',tauval) };
 baseparams = { 'online', 0, 'retire', 0, 'DoPlot', 1, 'finiteT', true };
 %Force to be a finite time process with given time horizon, 
 scalevec = StentScale; 
@@ -45,10 +46,10 @@ tic
 % Load in the data structures form those computations
 toc
 BaseFileName = strcat(param.matdir,param.BaseFileName); % note, we wish to allow loading files by name without having the full solution or the full param: just the name and range of blocks to load
-[rval, cfSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
-if cfSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
+[rval, stentSoln] = PDESolnLoad(BaseFileName,1,MAXFiles);
+if stentSoln.Header.PDEparam.DoPlot % do a bunch of diagnostics plots, save the eps files
 	if ~exist('fignum','var'), fignum = 20; end;
-    fignum = UtilPlotDiagnostics(fignum,cfSoln);
+    fignum = UtilPlotDiagnostics(fignum,stentSoln);
 end
 
 
@@ -56,7 +57,7 @@ end
 dw = .005;
 bigw = 15;
 wvec = (-bigw:bigw)*dw;
-[voikg, dsvec]= cfSoln.Header.PDEparam.approxvaluefunc(wvec,s0,scale,param);
+[voikg, dsvec]= stentSoln.Header.PDEparam.approxvaluefunc(wvec,s0,scale,param);
 voikg = scale.P * (voikg - max(0,wvec));
 fignum=fignum+1;figure(fignum);
 plot(wvec,voikg);
@@ -67,7 +68,7 @@ m=0;         % value of retirement option in (y,t) space
 mu0=0;
 
 APrioriRegret=(scale.sigma/sqrt(param.t0)) * PsiNorm( abs(mu0-m) / (scale.sigma/sqrt(param.t0)))
-tmppp=PDEGetVals(cfSoln,(mu0-m)*scale.beta,1/(param.t0*scale.gamma))/scale.beta
+tmppp=PDEGetVals(stentSoln,(mu0-m)*scale.beta,1/(param.t0*scale.gamma))/scale.beta
 APrioriRegret-tmppp
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
