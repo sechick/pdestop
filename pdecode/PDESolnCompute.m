@@ -113,7 +113,7 @@ mysmallfontsize=14;
 if PDEparam.finiteT
     sinit = sEND;      % start the calculation of the free boundary at values beyond sEND (smaller than sEND) in reverse time scale
 else
-    sinit = 0.95*sEND;      % start the calculation of the free boundary at values beyond sEND (smaller than sEND) in reverse time scale
+    sinit = 0.98*sEND;      % start the calculation of the free boundary at values beyond sEND (smaller than sEND) in reverse time scale
 end
 if isa(approxmeth, 'function_handle')
 %    if ~isDisc % for discounted case, want to have precfactor>1 grid points above 0 where expected reward for continuing is at least 0
@@ -121,7 +121,7 @@ if isa(approxmeth, 'function_handle')
 %    else       % for discounted case, want at least precfactor>1 grid points below the asymptotic approx for boundary for small sinit
 %        dw = (min(0.2,sinit)/sqrt(2))/PDEparam.precfactor/(10/9);      % need to divide be something bigger than 2 in order to get a valid recursion when C&F model is used
 %    end
-    dw = approxmeth(sinit,PDEscale,PDEparam) / PDEparam.precfactor / (10/9);    % the extra 10/9 is a fudge factor for hoping for numerical error improvement
+    dw = approxmeth(sinit,PDEscale,PDEparam) / PDEparam.precfactor / (1.5);    % the extra 10/9 is a fudge factor for hoping for numerical error improvement
 else
     dw = approxmeth(1);
 end

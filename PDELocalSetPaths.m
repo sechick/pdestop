@@ -26,8 +26,6 @@ function [ rval ] = PDELocalSetPaths( basepath )
         BASEDIR = basepath; % 
     end
 
-    %BASEDIR = 'd:\users\localforkofrepo'
-
     delaycoredir = [ BASEDIR '\pdecode\'];
     addpath(genpath(delaycoredir));
 

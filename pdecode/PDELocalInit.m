@@ -5,5 +5,11 @@ PDEdiscbase = 'CG';
 PDEnodiscbase = 'CF';
 PDEonbase = 'On';
 PDEoffbase = '';
-PDEmatfilebase = 'Matfiles\';
+%[basefolder,name,ext] = fileparts(pwd);
+[basefoldermfile,name,ext] = fileparts(mfilename('fullpath'));
+basefolder = fileparts(basefoldermfile);
+PDEmatfilebase = [ basefolder '\Matfiles\'];
+
 PDEfigfilebase = 'Figure\';
+
+addpath(genpath(basefolder));

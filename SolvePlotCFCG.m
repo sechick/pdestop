@@ -54,7 +54,7 @@ THoriz = -1;    % set to below 0 for infinite horizon
 %[rval, cfSoln] = PDESolnLoad(['MatFiles\CF');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Generate a lot of plots for those files: display the solutiosn to the
+% Generate a lot of plots for those files: display the solutions to the
 % standardized PDE for these combinations
 if ~exist('fignum','var'), fignum = 20; end;
 fignum = PDEPlotSolnFigFiles(fignum, [cgSoln, cfSoln, cgOn, cfOn] ) ; 

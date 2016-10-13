@@ -80,7 +80,8 @@ if finiteT
     CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'ceilfactor', 1.1, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
 else
     CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
-    CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'ceilfactor', 1.1, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+%    CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 10, 'ceilfactor', 1.1, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
+    CFparamvec = { 't0', .1, 'tEND', 100000, 'precfactor', 12, 'ceilfactor', 1.15, 'BaseFileName', [PDEnodiscbase PDEoffbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
     %figdir Figure\,  UnkVariance 0
 end
 scalevec = CFscalevec; 
