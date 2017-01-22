@@ -114,11 +114,11 @@ else
         if min(Bwsval) < 0
             warning('interpolated value of continuing to sample computed to be negative');
         end
-        Vvec = approxfunc(wveccol,sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
+        VvecKG = approxfunc(wveccol,sval,cfSoln.Header.PDEscale,cfSoln.Header.PDEparam);
         % from value function, subtract off reward from stopping immediately in
         % order to get the value of information from sequential sampling
-        Bwsval2 = Vvec-stopvec; % get value of info from KG* lookahead
-        Bwsval = max(Bwsval,Bwsval2); % take max of PDE value and KG* type value
+        BwsvalKG = VvecKG-stopvec; % get value of info from KG* lookahead
+        Bwsval = max(Bwsval,BwsvalKG); % take max of PDE value and KG* type value
         errstat = true;
     end
     Vvec = Vvec + Bwsval;      % updated value for Vvec is value of continuing to sample plus value of stpping now
