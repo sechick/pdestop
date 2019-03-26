@@ -134,9 +134,10 @@ if onflag   % online files are requested
         CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to not use KG* for terminal reward at time 'infinity'
         CFparamvec = { 't0', .1, 'tEND', THoriz, 'precfactor', 10, 'ceilfactor', 1.5, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };
     else
-        param.tEND = 1000 + param.t0;
+        oopsFixLen = 1000;
+        param.tEND = oopsFixLen + param.t0;
         THoriz = param.tEND;
-        warning('online learning requested for infinite horizon without discounting: not allowed -- try discounting or finite horizon: here, assuming finite horizon with Thoriz = %d',tHoriz);
+        warning('online learning requested for infinite horizon without discounting: not allowed -- try discounting or finite horizon: here, assuming finite horizon with Thoriz = %d; MaxPatients = %d',THoriz,oopsFixLen);
         CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', generictermreward, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
 %        CFfunctionset = {'termrewardfunc', generictermreward, 'approxvaluefunc', CFApproxValuefunc, 'approxmethod', upperNoDisc}; % use this to have KG* type rule at time 'infinity' for ca
         CFparamvec = { 't0', param.t0, 'tEND', THoriz, 'precfactor', 10, 'ceilfactor', 1.5, 'BaseFileName', [PDEnodiscbase PDEonbase] , 'matdir' , PDEmatfilebase, 'finiteT', finiteT  };

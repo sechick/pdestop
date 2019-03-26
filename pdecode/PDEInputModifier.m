@@ -38,7 +38,7 @@ for i=1:(scalearrayarrlen/2)
 %        pdescale.(scalearray{2*i-1}) = scalearray{2*i};
         rval = 0;
     else
-        disp(sprintf('adding pdescale field: %s, with value %s',char(scalearray{2*i-1}),char(scalearray{2*i}))); 
+        fprintf('adding pdescale field: %s, with value %s\n',char(scalearray{2*i-1}),char(scalearray{2*i})); 
         pdescale.(scalearray{2*i-1}) = scalearray{2*i};
 %        rval = 0;
     end
@@ -55,7 +55,7 @@ for i=1:(paramarrlen/2)
 %        pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
         rval = 0;
     else
-        disp(sprintf('adding pdeparam field: %s with value %s',char(paramarray{2*i-1}),char(paramarray{2*i}))); 
+        fprintf('adding pdeparam field: %s with value %s\n',char(paramarray{2*i-1}),char(paramarray{2*i})); 
         pdeparam.(paramarray{2*i-1}) = paramarray{2*i};
 %        rval = 0;
     end

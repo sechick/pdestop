@@ -10,8 +10,8 @@ function [ rval ] = PDELocalSetPaths( basepath )
 %   windows systems.
 %   OUTPUT: always returns true
 %   EXAMPLE USAGE:
-%       LocalDelaySetPaths();
-%       LocalDelaySetPaths('d:\users\localforkofrepo');
+%       PDELocalSetPaths();
+%       PDELocalSetPaths('d:\users\localforkofrepo');
 %   INTENDED WORK FLOW:
 %       When downloading matlab code for the paper, this file should be
 %       updated once to adapt to the local machine's requirements. This

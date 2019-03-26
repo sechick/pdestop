@@ -22,7 +22,9 @@ function [rval, numfiles] = PDESolnCompute(PDEscalein, PDEparam)
 %
 % OUTPUTS:
 %   rval: true if completed ok, false if there were errors
-%   numfiles: number of files output
+%   numfiles: number of files output in most cases (if DoFileSave is true -
+%       otherwise will contain a structure with the last computation batch
+%       from the PDE solution, for use without recourse to files).
 %   Side effect: files of name fName<n>.mat for n=1,2,...,numfiles
 %       which contain solutions for PDE in standardized coordinates 
 %       Contents include: upper and lower boundaries, standardized: reward
@@ -353,9 +355,11 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     lasthelds(ijk) = lastsaveds; % remember the value of s for restarting the next block
     
     % save results to file
-    mymat = strcat(matdir,fName,int2str(ijk),'.mat');
 % should be able to reconstruct Vwsmatrix from Bwsmatrix and PDEscale, PDEparam.
-    save(mymat,'Bwsmatrix','ENwsmatrix','EPCSwsmatrix','svec','wvec','upvec','downvec','up1','down1');
+    if PDEparam.DoFileSave % almost always should save the PDE solution - see CRN*.m files for counterexample
+        mymat = strcat(matdir,fName,int2str(ijk),'.mat');
+        save(mymat,'Bwsmatrix','ENwsmatrix','EPCSwsmatrix','svec','wvec','upvec','downvec','up1','down1');
+    end
 
     % if diagnostic plots are desired, plot them
     if PDEparam.DoPlot
@@ -449,7 +453,28 @@ ijk=0;
 StartFileVal = 1;           % lower index of valid file values
 EndFileVal = numfiles;      % upper index of valid file values
 TimeStamp = clock;
-mymat = strcat(matdir,fName,int2str(ijk),'.mat');
-save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac','WidthContin');
+if PDEparam.DoFileSave      % almost always should save the PDE solution - see CRN*.m files for counterexample
+    mymat = strcat(matdir,fName,int2str(ijk),'.mat');
+    save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac','WidthContin');
+else                        % if file not to be saved, put last batch of calculations into an output structure
+    PDEcomputation.Bwsmatrix = Bwsmatrix;
+    PDEcomputation.ENwsmatrix = ENwsmatrix;
+    PDEcomputation.EPCSwsmatrix = EPCSwsmatrix;
+    PDEcomputation.svec = svec;
+    PDEcomputation.wvec = wvec;
+    PDEcomputation.upvec = upvec;
+    PDEcomputation.downvec = downvec;
+    PDEcomputation.up1 = up1;
+    PDEcomputation.down1 = down1;
+    
+    PDEcomputation.PDEscale = PDEscale;
+    PDEcomputation.PDEparam = PDEparam;
+    PDEcomputation.lasts = lasts;
+    PDEcomputation.firsts = firsts;
+    PDEcomputation.myeps = myeps;
+    PDEcomputation.hifrac = hifrac;
+    PDEcomputation.lowfrac = lowfrac;
+    PDEcomputation.WidthContin = WidthContin;
+end
 
 end

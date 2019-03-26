@@ -71,6 +71,8 @@ PDELocalInit;
     pdeparam.ceilfactor = 1.1;  % controls width in w-scale for grid. Should be at least 1.1 for c>0 case, and at least 1.8 for disc > 0 case (in offline case) and bigger for online case
     pdeparam.precfactor = 7;    % intended to be minimum number of grid points between 0 and upper bound of continuation set. should be min 2, bigger for finer grid
     pdeparam.DoPlot = true;     % true if diagnostic plots/text to be output during computations of pde
+    pdeparam.DoFileSave = true; % true if files are to be saved. do not set to false without really knowing what you are doing (e.g. see CRN*.m files).
+    
     pdeparam.figdir = PDEfigfilebase; %'Figure\';% directory name for figures to be output
     pdeparam.matdir = PDEmatfilebase; %'Matfiles\'; % directory name for storing .mat files with pde solutions
 
