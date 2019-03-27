@@ -59,6 +59,7 @@ figsave = true;
 if ~isdir(figdir) && figsave
     mkdir(figdir);
 end
+pdenotsaved = true;    % matrix of pde grid computation not yet recalled for case when only the grid for s0 is to be returned
 
 % copy some parameter values to local
 %alpha = PDEscale.alpha;
@@ -360,6 +361,28 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
         mymat = strcat(matdir,fName,int2str(ijk),'.mat');
         save(mymat,'Bwsmatrix','ENwsmatrix','EPCSwsmatrix','svec','wvec','upvec','downvec','up1','down1');
     end
+    if (s0 <= scur) && (pdenotsaved)       % if s0 not yet reached, keep the info so far - update until s0 <
+        pdenotsaved = false;
+        
+        PDEcomputation.Bwsmatrix = Bwsmatrix;
+        PDEcomputation.ENwsmatrix = ENwsmatrix;
+        PDEcomputation.EPCSwsmatrix = EPCSwsmatrix;
+        PDEcomputation.svec = svec;
+        PDEcomputation.wvec = wvec;
+        PDEcomputation.upvec = upvec;
+        PDEcomputation.downvec = downvec;
+        PDEcomputation.up1 = up1;
+        PDEcomputation.down1 = down1;
+
+        PDEcomputation.PDEscale = PDEscale;
+        PDEcomputation.PDEparam = PDEparam;
+        PDEcomputation.lasts = lasts;
+        PDEcomputation.firsts = firsts;
+        PDEcomputation.myeps = myeps;
+        PDEcomputation.hifrac = hifrac;
+        PDEcomputation.lowfrac = lowfrac;
+        PDEcomputation.numfiles = numfiles;
+    end
 
     % if diagnostic plots are desired, plot them
     if PDEparam.DoPlot
@@ -457,24 +480,7 @@ if PDEparam.DoFileSave      % almost always should save the PDE solution - see C
     mymat = strcat(matdir,fName,int2str(ijk),'.mat');
     save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac','WidthContin');
 else                        % if file not to be saved, put last batch of calculations into an output structure
-    PDEcomputation.Bwsmatrix = Bwsmatrix;
-    PDEcomputation.ENwsmatrix = ENwsmatrix;
-    PDEcomputation.EPCSwsmatrix = EPCSwsmatrix;
-    PDEcomputation.svec = svec;
-    PDEcomputation.wvec = wvec;
-    PDEcomputation.upvec = upvec;
-    PDEcomputation.downvec = downvec;
-    PDEcomputation.up1 = up1;
-    PDEcomputation.down1 = down1;
-    
-    PDEcomputation.PDEscale = PDEscale;
-    PDEcomputation.PDEparam = PDEparam;
-    PDEcomputation.lasts = lasts;
-    PDEcomputation.firsts = firsts;
-    PDEcomputation.myeps = myeps;
-    PDEcomputation.hifrac = hifrac;
-    PDEcomputation.lowfrac = lowfrac;
-    PDEcomputation.WidthContin = WidthContin;
+    numfiles = PDEcomputation;
 end
 
 end

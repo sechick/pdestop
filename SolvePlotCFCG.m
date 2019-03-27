@@ -20,8 +20,8 @@
 PDELocalSetPaths(); % set up paths to PDE package
 PDELocalInit;       % set up some variables (all starting with PDE - avoid variables with such names
 
-onflag = true;
 onflag = false;
+onflag = true;
 THoriz = -1;    % set to below 0 for infinite horizon
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
