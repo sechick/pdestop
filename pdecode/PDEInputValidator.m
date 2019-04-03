@@ -86,9 +86,9 @@ if param.precfactor < 2
     errorlist = sprintf('%s\n%s: precfactor should be at least 2, and was reset to %f\n',errorlist,routinename,param.precfactor);
     rval = 0;
 end
-if ~param.DoFileSave
-    errorlist = sprintf('%s\n%s: WARNING: set DoFileSave to false at own risk\n',errorlist,routinename);
-end    
+%if ~param.DoFileSave
+%    errorlist = sprintf('%s\n%s: WARNING: set DoFileSave to false at own risk\n',errorlist,routinename);
+%end    
 %param.DoPlot = true;    % default: print diagnostic info during computation
 if length(param.figdir) > 0
     if ~isdir(param.figdir)
