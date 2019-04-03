@@ -1,4 +1,4 @@
-function [rval, numfiles] = PDESolnCompute(PDEscalein, PDEparam)
+function [rval, numfiles, PDEcomputations0] = PDESolnCompute(PDEscalein, PDEparam)
 % CFSolvePDE: Solves free boundary problem in scaled coordinates for the
 % sequential sampling for simulation optimization. 
 %
@@ -25,6 +25,8 @@ function [rval, numfiles] = PDESolnCompute(PDEscalein, PDEparam)
 %   numfiles: number of files output in most cases (if DoFileSave is true -
 %       otherwise will contain a structure with the last computation batch
 %       from the PDE solution, for use without recourse to files).
+%   PDEcomputations0: a data structure with info to recover the PDE solution in the
+%       region where s0 is included. this is optional argument
 %   Side effect: files of name fName<n>.mat for n=1,2,...,numfiles
 %       which contain solutions for PDE in standardized coordinates 
 %       Contents include: upper and lower boundaries, standardized: reward
@@ -364,24 +366,24 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     if (s0 <= scur) && (pdenotsaved)       % if s0 not yet reached, keep the info so far - update until s0 <
         pdenotsaved = false;
         
-        PDEcomputation.Bwsmatrix = Bwsmatrix;
-        PDEcomputation.ENwsmatrix = ENwsmatrix;
-        PDEcomputation.EPCSwsmatrix = EPCSwsmatrix;
-        PDEcomputation.svec = svec;
-        PDEcomputation.wvec = wvec;
-        PDEcomputation.upvec = upvec;
-        PDEcomputation.downvec = downvec;
-        PDEcomputation.up1 = up1;
-        PDEcomputation.down1 = down1;
+        PDEcomputations0.Bwsmatrix = Bwsmatrix;
+        PDEcomputations0.ENwsmatrix = ENwsmatrix;
+        PDEcomputations0.EPCSwsmatrix = EPCSwsmatrix;
+        PDEcomputations0.svec = svec;
+        PDEcomputations0.wvec = wvec;
+        PDEcomputations0.upvec = upvec;
+        PDEcomputations0.downvec = downvec;
+        PDEcomputations0.up1 = up1;
+        PDEcomputations0.down1 = down1;
 
-        PDEcomputation.PDEscale = PDEscale;
-        PDEcomputation.PDEparam = PDEparam;
-        PDEcomputation.lasts = lasts;
-        PDEcomputation.firsts = firsts;
-        PDEcomputation.myeps = myeps;
-        PDEcomputation.hifrac = hifrac;
-        PDEcomputation.lowfrac = lowfrac;
-        PDEcomputation.numfiles = numfiles;
+        PDEcomputations0.PDEscale = PDEscale;
+        PDEcomputations0.PDEparam = PDEparam;
+        PDEcomputations0.lasts = lasts;
+        PDEcomputations0.firsts = firsts;
+        PDEcomputations0.myeps = myeps;
+        PDEcomputations0.hifrac = hifrac;
+        PDEcomputations0.lowfrac = lowfrac;
+        PDEcomputations0.numfiles = numfiles;
     end
 
     % if diagnostic plots are desired, plot them
@@ -479,8 +481,7 @@ TimeStamp = clock;
 if PDEparam.DoFileSave      % almost always should save the PDE solution - see CRN*.m files for counterexample
     mymat = strcat(matdir,fName,int2str(ijk),'.mat');
     save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac','WidthContin');
-else                        % if file not to be saved, put last batch of calculations into an output structure
-    numfiles = PDEcomputation;
 end
-
+if pdenotsaved    % if PDEcomputations0 was not set above, set it to a default value, he empty value.
+    PDEcomputations0 = [];
 end
