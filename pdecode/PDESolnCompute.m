@@ -467,9 +467,11 @@ while (sout < s0) %&& (wmax ~= wvec(maxindx))        % iterate until the largest
     Cin(midindx)=lastsavedCin(midindx);
 	ENCin(midindx)=lastsavedENCin(midindx);
     EPCSCin(midindx)=lastsavedEPCSCin(midindx);
-%    plot(wvec,Cin,'--')
-%    pause
-    hold off
+    if PDEparam.DoPlot
+    %    plot(wvec,Cin,'--')
+    %    pause
+        hold off
+    end
 end
 numfiles=ijk;
 
