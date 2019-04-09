@@ -486,4 +486,5 @@ if PDEparam.DoFileSave      % almost always should save the PDE solution - see C
 end
 if pdenotsaved    % if PDEcomputations0 was not set above, set it to a default value, he empty value.
     PDEcomputations0 = [];
+    warning('PDESolnCompute: Unable to find s0 with positive reward. Perhaps check terminal reward function.');
 end
