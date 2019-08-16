@@ -253,6 +253,9 @@ while minindx==1
 %    if (counter < 20*PDEparam.precfactor)  % force a few iterations of this recursion in order to 'prime' the initial conditions and to avoid 'edge' effects from the initializaiton of the terminal condition
         minindx = 1;
     end % sEND
+    if (PDEparam.finiteT) && (counter > 50) % SEC: Kludge here to prevent too many iterations when there is a finite horizon.
+        minindx = 0;
+    end
     
     scur=sout;
     counter = counter + 1;
