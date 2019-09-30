@@ -128,7 +128,7 @@ if isa(approxmeth, 'function_handle')
 %    end
     dw = approxmeth(sinit,PDEscale,PDEparam) / PDEparam.precfactor / (1.5);    % the extra 10/9 is a fudge factor for hoping for numerical error improvement
 else
-    dw = approxmeth(1);
+    dw = approxmeth(1,PDEscale,PDEparam);
 end
 ds = dw^2 * 2 / 3;          % in trinomial tree, equal probs of going up, straight or down implies this equation to get correct variance of reverse time brownian motion
 %SAVEEVERY=280;        % every how many iterations do we keep the PDE values, for storage in matrix and files?
@@ -166,7 +166,7 @@ if isa(approxmeth, 'function_handle')
     ratiovec = wmaxvec ./ dwvec;    % figure roughly how many dw from 0 to upper boundary...
     bigw = ceil(ceilfactor*max(ratiovec)); % hit that figure with a multiplier in order to make sure there is a margin of error, especially below boundary
 else  % if we don't have a function to compute, approximately, the upper stopping boundary, then take it from user specified input
-    bigw = max(2*PDEparam.precfactor,ceil(approxmeth(2)));
+    bigw = max(2*PDEparam.precfactor,ceil(approxmeth(2,PDEscale,PDEparam)));
 end
 
 % Now, can initialize the vector of w values for the recursion, and compute
