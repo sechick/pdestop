@@ -487,7 +487,7 @@ if PDEparam.DoFileSave      % almost always should save the PDE solution - see C
     mymat = strcat(matdir,fName,int2str(ijk),'.mat');
     save(mymat,'fName', 'TimeStamp','StartFileVal','EndFileVal','PDEscale','PDEparam','lasts','firsts','lasthelds','myeps','hifrac','lowfrac','WidthContin');
 end
-if pdenotsaved    % if PDEcomputations0 was not set above, set it to a default value, he empty value.
+if pdenotsaved    % if PDEcomputations0 was not set above, set it to a default value, the empty value.
     PDEcomputations0 = [];
     warning('PDESolnCompute: Unable to find s0 with positive reward. Perhaps check terminal reward function.');
 end
