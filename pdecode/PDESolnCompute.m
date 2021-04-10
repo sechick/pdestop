@@ -155,6 +155,15 @@ numchunks = 1 + ceil( log2( 1.1*max(1,min(THRESHSCALE,s0)-sinit)/(Numds*ds) ) );
 spowvec = [0 4.^(0:max(0,(numchunks-1)))]; % compute some vectors to say roughly how many times the initial 'ds' are the s-scale steps in the i=1,...,numchunks iterations
 wpowvec = [1 2.^(0:max(0,(numchunks-1)))]; % compute some vectors to say roughly how many times the initial 'dw' are the w-scale steps in the i=1,...,numchunks iterations
 smaxvec = sinit+Numds*ds*cumsum(spowvec); 
+MINNUMDS = 500; % if there are a small number of ds in the desired intervel, then
+if (s0-sEND) < MINNUMDS*ds    % do some defensive programming: reset the ds and dw smaller
+    ds = (s0-sEND) / MINNUMDS;
+    dw = sqrt(3*ds/2);
+    numchunks = 1;
+    spowvec = MINNUMDS;
+    wpowvec = 1;
+    smaxvec = max(s0,sEND);
+end
 % Right now we are only checking for figure fitting within boundary. Maybe
 % we should also be checking for number of grid points within boundary at
 % each value of the boundary... might need to shrink dw again...
