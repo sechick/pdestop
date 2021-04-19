@@ -36,6 +36,9 @@ function [ Vvec, Bwsval, ENvec, PCSvec, errstat ] = PDEGetVals(cfSoln,wvec,sval,
 %
 % (c) 2015, 2016, S Chick, all rights reserved. Code is provided 'as is' with no
 % warranty of correctness.
+% UPDATED: 2021 04 19. Matlab seems to have changed behavior with interp2 -
+% bombs now if checking a spot ok for s-coord but none in contin boundary
+% in w-coord range - now does a check to keep crash from occuring.
 
 %validate inputs, initialize some outputs
 errstat = false;    % no error in computing B() (unless proven otherwise below
@@ -109,7 +112,13 @@ else
     lower = interp1( svec, cfSoln.Data(ind).downvec, sval );
     % interpolate the value of sampling at time sval for values of w in
     % wvec, for values in estimated continuation region
-    Bwsval((wvec < upper) & (wvec > lower))=interp2(svec,wv,cfSoln.Data(ind).Bwsmatrix,sval,wveccol((wvec < upper) & (wvec > lower)));
+    if ~isempty(wveccol((wvec < upper) & (wvec > lower))) % SEC: 2021 04 19 FIX: bug fix for migration to 2021a - interp2 changed behavior when out of range for w vales on all matrix entries
+        Bwsval((wvec < upper) & (wvec > lower))=interp2(svec,wv,cfSoln.Data(ind).Bwsmatrix,sval,wveccol((wvec < upper) & (wvec > lower)));
+        %Bwsval((wvec < upper) & (wvec > lower))=interp2(svec,wv,cfSoln.Data(ind).Bwsmatrix,sval,wveccol((wvec < upper) & (wvec > lower)));,'linear',0);
+        %Bwsval((wvec < upper) & (wvec >
+        %lower))=interp2(svec,wv,cfSoln.Data(ind).Bwsmatrix,sval,wveccol((wvec
+        %< upper) & (wvec > lower)));% SEC ORIG FROM PRE2020
+    end
     if min(Bwsval) <= 0
         if min(Bwsval) < 0
             warning('interpolated value of continuing to sample computed to be negative');
@@ -123,7 +132,9 @@ else
     end
     Vvec = Vvec + Bwsval;      % updated value for Vvec is value of continuing to sample plus value of stpping now
     if extraflag
-        ENvec((wvec < upper) & (wvec > lower)) = interp2(svec,wv,cfSoln.Data(ind).ENwsmatrix,sval,wveccol((wvec < upper) & (wvec > lower)));
+        if ~isempty(wveccol((wvec < upper) & (wvec > lower))) % SEC: 2021 04 19 FIX: bug fix for migration to 2021a - interp2 changed behavior when out of range for w vales on all matrix entries
+            ENvec((wvec < upper) & (wvec > lower)) = interp2(svec,wv,cfSoln.Data(ind).ENwsmatrix,sval,wveccol((wvec < upper) & (wvec > lower)));
+        end %PCSvec interp2 does not use the check if in continuation region or not.
         PCSvec = interp2(svec,wv,cfSoln.Data(ind).EPCSwsmatrix,sval,wveccol);
     end
 end
